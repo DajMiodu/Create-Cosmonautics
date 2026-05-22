@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Create: Cosmonautics" width="600">
+</p>
+
 # Create: Cosmonautics
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
