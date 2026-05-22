@@ -77,5 +77,6 @@
   "key.rocketnautics.toggle_jetpack": "切换喷气背包模式",
   "key.categories.rocketnautics": "宇航学",
   "rocketnautics.jetpack.enabled": "[喷气系统上线]",
-  "rocketnautics.jetpack.disabled": "[喷气系统离线]"
+  "rocketnautics.jetpack.disabled": "[喷气系统离线]",
+  "rocketnautics.display_source.sputnik": "卫星节点显示"
 }
