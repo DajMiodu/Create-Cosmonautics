@@ -34,6 +34,7 @@ public final class TimescaleCommand {
                                         throw NOT_IN_INSTANCE.create();
                                     }
                                     instance.getPosition().setTimescale(value);
+                                    instance.forceClientSync();
                                     context.getSource().sendSuccess(() -> Component.literal("Instance timescale set to: " + value), true);
                                     return 1;
                                 })
@@ -51,6 +52,7 @@ public final class TimescaleCommand {
                                         throw NOT_IN_INSTANCE.create();
                                     }
                                     instance.getPosition().setTimescale(1);
+                                    instance.forceClientSync();
                                     context.getSource().sendSuccess(() -> Component.literal("Instance timescale reset to 1"), true);
                                     return 1;
                                 })

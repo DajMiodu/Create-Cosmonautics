@@ -6,6 +6,7 @@ import dev.devce.rocketnautics.api.orbit.FrameTree;
 import dev.devce.rocketnautics.content.orbit.*;
 import dev.devce.rocketnautics.content.orbit.universe.CubePlanet;
 import dev.devce.rocketnautics.content.orbit.universe.PlanetDimensionData;
+import dev.devce.rocketnautics.content.orbit.universe.PlanetExtras;
 import dev.devce.rocketnautics.content.orbit.universe.PointGravitySource;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +31,8 @@ public class PlanetDefinitionBuilder {
     private int transferHeight = 20_000;
     private @Nullable IntFunction<byte[]> renderDataOverride;
     private boolean clouds = false;
+    private boolean star = false;
+    private String lightSource;
 
     private double radius;
     private String frameName;
@@ -105,7 +108,7 @@ public class PlanetDefinitionBuilder {
         }
         double roi = orbit == null ? Double.POSITIVE_INFINITY : orbit.getA() * Math.pow(mu / orbited.mu(), 2/5d);
         parent.gravitySource(new PointGravitySource(ourFrame, mu, roi));
-        CubePlanet p = new CubePlanet(ourFrame, radius, angularCoordinates, constructDimensionData(), renderDataOverride, clouds);
+        CubePlanet p = new CubePlanet(ourFrame, radius, angularCoordinates, constructDimensionData(), renderDataOverride, constructExtras());
         parent.cubePlanet(p);
         return p;
     }
@@ -113,6 +116,16 @@ public class PlanetDefinitionBuilder {
     protected PlanetDimensionData constructDimensionData() {
         if (linkedDimension == null) return null;
         return new PlanetDimensionData(linkedDimension, transferHeight);
+    }
+
+    protected PlanetExtras constructExtras() {
+        if (lightSource != null) {
+            FrameTree f = parent.getFrameByName(lightSource);
+            if (f != null) {
+                return new PlanetExtras(star, clouds, f.getId());
+            }
+        }
+        return new PlanetExtras(star, clouds);
     }
 
     public PlanetDefinitionBuilder setLinkedDimension(@Nullable ResourceKey<Level> linkedDimension) {
@@ -130,8 +143,18 @@ public class PlanetDefinitionBuilder {
         return this;
     }
 
+    public PlanetDefinitionBuilder setStar(boolean star) {
+        this.star = star;
+        return this;
+    }
+
     public PlanetDefinitionBuilder setClouds(boolean clouds) {
         this.clouds = clouds;
+        return this;
+    }
+
+    public PlanetDefinitionBuilder setShadowLightSource(String name) {
+        this.lightSource = name;
         return this;
     }
 

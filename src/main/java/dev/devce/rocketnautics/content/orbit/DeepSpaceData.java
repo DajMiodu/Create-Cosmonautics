@@ -81,7 +81,7 @@ public class DeepSpaceData extends SavedData {
 
     // end static //
 
-    private final UniverseDefinition universe = StandardUniverseProvider.createSunOverworldMoon().build();
+    private final UniverseDefinition universe = StandardUniverseProvider.createSolarSystem().build();
 
     private final Int2ObjectMap<InstanceList> instances = new Int2ObjectOpenHashMap<>();
 

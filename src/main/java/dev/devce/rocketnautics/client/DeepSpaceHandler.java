@@ -20,7 +20,6 @@ import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ArrayListDeque;
@@ -29,8 +28,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.hipparchus.geometry.euclidean.threed.Rotation;
-import org.hipparchus.geometry.euclidean.threed.RotationConvention;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -38,7 +35,6 @@ import org.joml.Quaternionf;
 import org.orekit.frames.Frame;
 import org.orekit.orbits.Orbit;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.PVCoordinates;
 import org.orekit.utils.TimeStampedPVCoordinates;
 
 import java.util.*;
@@ -185,6 +181,7 @@ public final class DeepSpaceHandler {
         PoseStack poseStack = event.getPoseStack();
 
         // 1. Render custom cosmic nebula and HD space stars first (these handle camera rotation internally!)
+        // TODO level time is fixed in deep space, figure out a better solution. Position in absolute frame, then have sol moving in the absolute frame?
         float celestialAngle = mc.level.getTimeOfDay(event.getPartialTick().getGameTimeDeltaTicks());
         SkyHandler.renderCosmicNebula(poseStack, camera, celestialAngle);
         SkyHandler.renderSpaceStars(poseStack, 1.0f, camera, celestialAngle);
@@ -219,6 +216,7 @@ public final class DeepSpaceHandler {
     }
 
     private static boolean renderPlanet(CubePlanet planet, Vector3D ourPosInPlanetFrame, PoseStack poseStack, AbsoluteDate date, float renderDist, float celestialAngle, float partialTicks) {
+        assert UNIVERSE != null;
         Minecraft mc = Minecraft.getInstance();
         IntObjectPair<DeepSpaceTexture> render = KNOWN_RENDER_DATA.get(planet.id());
         if (render == null || render.leftInt() != SkyHandler.getMaximumScale() || render.right() == null) {
@@ -234,9 +232,9 @@ public final class DeepSpaceHandler {
         RenderSystem.defaultBlendFunc();
         RenderSystem.depthMask(false);
         RenderSystem.disableDepthTest();
-        boolean isStar = !planet.clouds() && planet.frame().getName().equals("sol");
+        RenderSystem.enableCull();
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        if (isStar) {
+        if (planet.extras().star()) {
             SkyHandler.ensureStarPlasmaTexture();
             if (SkyHandler.STAR_PLASMA_TEXTURE_ID != null) {
                 RenderSystem.setShaderTexture(0, SkyHandler.STAR_PLASMA_TEXTURE_ID);
@@ -248,53 +246,14 @@ public final class DeepSpaceHandler {
         }
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         Matrix4f matrix = poseStack.last().pose();
 
-        // align top of texture for top/bottom faces with the north face
-
-        // TOP face - CCW from above
-        bufferbuilder.addVertex(matrix, -size, size, -size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, -size, size, size).setUv(0.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, size, size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, size, -size).setUv(1.0f, 0.0f);
-
-        // BOTTOM - CCW from below
-        bufferbuilder.addVertex(matrix, -size, -size, -size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, size, -size, -size).setUv(1.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, size, -size, size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, -size, -size, size).setUv(0.0f, 1.0f);
-
-        // align top of texture for horizontal faces with the top face
-
-        // NORTH (Z = -size) - CCW from North
-        bufferbuilder.addVertex(matrix, size, size, -size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, size, -size, -size).setUv(0.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, -size, -size, -size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, -size, size, -size).setUv(1.0f, 0.0f);
-
-        // SOUTH (Z = size) - CCW from South
-        bufferbuilder.addVertex(matrix, -size, size, size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, -size, -size, size).setUv(0.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, -size, size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, size, size).setUv(1.0f, 0.0f);
-
-        // WEST (X = -size) - CCW from West
-        bufferbuilder.addVertex(matrix, -size, size, -size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, -size, -size, -size).setUv(0.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, -size, -size, size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, -size, size, size).setUv(1.0f, 0.0f);
-
-        // EAST (X = size) - CCW from East
-        bufferbuilder.addVertex(matrix, size, size, size).setUv(0.0f, 0.0f);
-        bufferbuilder.addVertex(matrix, size, -size, size).setUv(0.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, -size, -size).setUv(1.0f, 1.0f);
-        bufferbuilder.addVertex(matrix, size, size, -size).setUv(1.0f, 0.0f);
-
+        renderCubeFaces(bufferbuilder, matrix, size, 0, 0, 1.0f, 1.0f, 1.0f, 1.0f);
         BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 
-        if (isStar) {
+        if (planet.extras().star()) {
             // Render 3 extra rotating, pulsating plasma layers for a highly turbulent, volumetric 3D solar storm!
             // This prevents the "flat cube" look and creates amazing swirling interference patterns.
             long tick = mc.level.getGameTime();
@@ -335,12 +294,12 @@ public final class DeepSpaceHandler {
             }
         }
 
-        if (planet.clouds()) {
+        if (planet.extras().clouds()) {
             SkyHandler.ensureCloudTexture();
             if (SkyHandler.CLOUD_TEXTURE_ID != null) {
                 RenderSystem.setShaderTexture(0, SkyHandler.CLOUD_TEXTURE_ID);
-                long factor = 1000L * 1000; // MUCH slower
-                float timeOffset = (System.currentTimeMillis() % (20L * factor)) / (float) factor;
+                long factor = 1000L; // MUCH slower
+                float timeOffset = (float) ((date.durationFrom(DeepSpaceData.EPOCH) % (20L * factor)) / (float) factor);
                 
                 // Cloud Shadows
                 double theta = 2.0 * Math.PI * celestialAngle;
@@ -373,18 +332,20 @@ public final class DeepSpaceHandler {
         }
 
         // Render gorgeous 3D dynamic, subdivided, cell-shaded and dithered shadow overlay for all non-star planets!
-        if (!isStar) {
-            Vector3D solPosInPlanetFrame = UNIVERSE.getFrameByName("sol").map(solFrame -> {
+        if (planet.extras().renderShadow()) {
+            Vector3D lightSourcePosInOurFrame = UNIVERSE.getFrameByID(planet.extras().shadowLightSourceID()).map(sourceFrame -> {
                 try {
-                    return solFrame.getStaticTransformTo(planet.orekitFrame(), date).transformPosition(Vector3D.ZERO);
+                    return sourceFrame.getStaticTransformTo(planet.orekitFrame(), date).transformPosition(Vector3D.ZERO);
                 } catch (Exception e) {
                     return Vector3D.ZERO;
                 }
             }).orElse(Vector3D.ZERO);
 
-            Vector3D L = solPosInPlanetFrame.getNormSq() > 1e-6 ? solPosInPlanetFrame.normalize() : new Vector3D(1, 0, 0);
+            Vector3D L = lightSourcePosInOurFrame.getNormSq() > 1e-6 ? lightSourcePosInOurFrame.normalize() : new Vector3D(1, 0, 0);
+
+            L = planet.getRotationAtTime(date).applyInverseTo(L);
             
-            float shadowSize = planet.clouds() ? size * 1.035f : size * 1.002f;
+            float shadowSize = planet.extras().clouds() ? size * 1.035f : size * 1.002f;
             
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
@@ -415,6 +376,13 @@ public final class DeepSpaceHandler {
                         Vector3D p2 = getPoint(face, gu, gv + 1, G);
                         Vector3D p3 = getPoint(face, gu + 1, gv + 1, G);
                         Vector3D p4 = getPoint(face, gu + 1, gv, G);
+
+                        // for some reason the bottom face and only the bottom face has an incorrect normal
+                        if (face == shadowFaces[1]) {
+                            Vector3D temp = p2;
+                            p2 = p4;
+                            p4 = temp;
+                        }
                         
                         long c1 = computeColor(p1, L, gu, gv);
                         long c2 = computeColor(p2, L, gu, gv + 1);
@@ -436,16 +404,16 @@ public final class DeepSpaceHandler {
             BufferUploader.drawWithShader(shadowCubeBuilder.buildOrThrow());
         }
 
-        if (isStar || planet.clouds()) {
+        if (planet.extras().diffuseLayers()) {
             RenderSystem.enableBlend();
             RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
             RenderSystem.disableCull();
 
-            int layers = isStar ? 35 : 20; 
+            int layers = planet.extras().diffuseLayerCount();
             
             float ar = 1.0f, ag = 1.0f, ab = 1.0f;
-            if (!isStar) {
+            if (!planet.extras().star()) {
                 double tAngle = celestialAngle * 2.0 * Math.PI;
                 float sunIntensity = (float) Math.cos(tAngle);
                 float sideIntensity = (float) Math.abs(Math.sin(tAngle));
@@ -475,7 +443,7 @@ public final class DeepSpaceHandler {
                 float aa;
                 float lr = ar, lg = ag, lb = ab;
 
-                if (isStar) {
+                if (planet.extras().star()) {
                     // Solar corona: much wider glow, extremely beautiful color gradient:
                     // From white-hot yellow (inner) to golden-orange to fiery-red to violet/magenta (outer "veil" flare!)
                     s = size * (1.005f + (float)Math.pow(progress, 1.5f) * 0.7f); // wider glow
@@ -572,15 +540,7 @@ public final class DeepSpaceHandler {
         // Draw base planet map
         renderCubeFaces(bufferbuilder, matrix, size, 0.0f, 0.0f, r, g, b, a);
 
-        // Hologram Clouds
-        SkyHandler.ensureCloudTexture();
-        if (SkyHandler.CLOUD_TEXTURE_ID != null) {
-            VertexConsumer cloudBuilder = source.getBuffer(HOLOGRAM_TYPE.apply(SkyHandler.CLOUD_TEXTURE_ID));
-            long factor = 1000L * 10;
-            float timeOffset = (System.currentTimeMillis() % (20L * factor)) / (float) factor;
-            float cloudSize = size * 1.02f;
-            renderCubeFaces(cloudBuilder, matrix, cloudSize, timeOffset, 0.0f, r, g, b, a);
-        }
+        // no clouds, they look really odd on the hologram
 
         // since we're constantly updating the linked texture, we need to draw it right now.
         if (source instanceof MultiBufferSource.BufferSource buf) {
@@ -606,6 +566,10 @@ public final class DeepSpaceHandler {
 
 
     private static void renderCubeFaces(VertexConsumer bufferbuilder, Matrix4f matrix, float size, float uOffset, float vOffset, float r, float g, float b, float a) {
+        // u,v of 0,0 corresponds to negX,negZ (u is x, v is z)
+
+        // align top of texture for top/bottom faces with the north face
+
         // TOP face
         bufferbuilder.addVertex(matrix, -size, size, -size).setColor(r, g, b, a).setUv(0.0f + uOffset, 0.0f + vOffset);
         bufferbuilder.addVertex(matrix, -size, size, size).setColor(r, g, b, a).setUv(0.0f + uOffset, 1.0f + vOffset);
@@ -617,6 +581,8 @@ public final class DeepSpaceHandler {
         bufferbuilder.addVertex(matrix, size, -size, -size).setColor(r, g, b, a).setUv(1.0f + uOffset, 0.0f + vOffset);
         bufferbuilder.addVertex(matrix, size, -size, size).setColor(r, g, b, a).setUv(1.0f + uOffset, 1.0f + vOffset);
         bufferbuilder.addVertex(matrix, -size, -size, size).setColor(r, g, b, a).setUv(0.0f + uOffset, 1.0f + vOffset);
+
+        // align top of texture for horizontal faces with the top face
 
         // NORTH
         bufferbuilder.addVertex(matrix, size, size, -size).setColor(r, g, b, a).setUv(0.0f + uOffset, 0.0f + vOffset);

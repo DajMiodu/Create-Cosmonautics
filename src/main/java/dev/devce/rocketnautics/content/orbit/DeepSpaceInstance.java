@@ -39,6 +39,7 @@ public final class DeepSpaceInstance {
     private final long id;
 
     private final DeepSpacePosition position = new DeepSpacePosition();
+    private boolean forceClientSync = false;
 
     private CubePlanet lastOrbiting;
 
@@ -116,7 +117,7 @@ public final class DeepSpaceInstance {
     }
 
     public void tick(MinecraftServer server) {
-        if (isProcessingRetirement) return;
+        if (isProcessingRetirement || isCorrupted()) return;
         // handle physics
         if (!pendingPhysics.isEmpty()) {
             TimeStampedPVCoordinates coords = position.getCurrentPVCoords();
@@ -139,7 +140,8 @@ public final class DeepSpaceInstance {
         // update position
         position.propagate(manager.getUniverse());
         // handle render data
-        if (server.getTickCount() % 20 == 0) {
+        if (forceClientSync || server.getTickCount() % 20 == 0) {
+            forceClientSync = false;
             ServerLevel deepSpace = server.getLevel(DeepSpaceData.DEEP_SPACE_DIM);
             List<ServerPlayer> players = deepSpace.getPlayers(p -> boundingBox().contains(p.position()));
             for (ServerPlayer player : players) {
@@ -228,5 +230,9 @@ public final class DeepSpaceInstance {
             center = new Vector3d(v.x(), v.y(), v.z());
         }
         return center;
+    }
+
+    public void forceClientSync() {
+        this.forceClientSync = true;
     }
 }
