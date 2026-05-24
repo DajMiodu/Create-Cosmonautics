@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "BacktankUtilMixin",
+    "BucketItemAccessor",
+    "DistanceManagerAccessor",
     "DivingHelmetItemMixin",
     "EntityMixin",
     "LivingEntityAccessor",
@@ -16,6 +18,7 @@
   "client": [
     "ClientLevelMixin",
     "ClientPacketListenerMixin",
+    "GameRendererAccessor",
     "LevelRendererMixin",
     "MinecraftMixin"
   ],
