@@ -8,9 +8,11 @@ import dev.devce.rocketnautics.RocketNautics;
 import net.createmod.catnip.lang.Lang;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 
@@ -154,6 +156,29 @@ public class RocketTags {
         BlockTags(NameSpace namespace, String pathOverride) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace.id, pathOverride == null ? name().toLowerCase(Locale.ROOT) : pathOverride);
             tag = net.minecraft.tags.BlockTags.create(id);
+        }
+    }
+
+    public enum BiomeTags {
+        LUNAR_MARIA, LUNAR_HIGHLANDS;
+
+        public final TagKey<Biome> tag;
+
+        BiomeTags() {
+            this(NameSpace.MOD, null);
+        }
+
+        BiomeTags(NameSpace namespace) {
+            this(namespace, null);
+        }
+
+        BiomeTags(String pathOverride) {
+            this(NameSpace.MOD, pathOverride);
+        }
+
+        BiomeTags(NameSpace namespace, String pathOverride) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(namespace.id, pathOverride == null ? name().toLowerCase(Locale.ROOT) : pathOverride);
+            tag = TagKey.create(Registries.BIOME, id);
         }
     }
 

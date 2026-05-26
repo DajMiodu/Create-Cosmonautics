@@ -1,0 +1,156 @@
+{
+  "type": "rocketnautics:moon",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "rocketnautics:lunar_highlands",
+          "parameters": {
+            "continentalness": [
+              -0.05,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.0,
+            "temperature": 0.0,
+            "weirdness": [
+              -1.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "biome": "rocketnautics:lunar_maria",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              -0.05
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.0,
+            "temperature": 0.0,
+            "weirdness": [
+              -1.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "biome": "rocketnautics:lunar_aged_chasm",
+          "parameters": {
+            "continentalness": [
+              0.01,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.01,
+            "temperature": 0.0,
+            "weirdness": [
+              -2.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "biome": "rocketnautics:lunar_basalt_chasm",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              -0.05
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.01,
+            "temperature": 0.0,
+            "weirdness": [
+              -2.0,
+              -1.0
+            ]
+          }
+        },
+        {
+          "biome": "rocketnautics:lunar_aged_spikes",
+          "parameters": {
+            "continentalness": [
+              0.01,
+              2.0
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.0,
+            "temperature": 0.0,
+            "weirdness": [
+              1.0,
+              2.0
+            ]
+          }
+        },
+        {
+          "biome": "rocketnautics:lunar_basalt_spikes",
+          "parameters": {
+            "continentalness": [
+              -2.0,
+              -0.05
+            ],
+            "depth": [
+              -2.0,
+              2.0
+            ],
+            "erosion": [
+              -2.0,
+              2.0
+            ],
+            "humidity": 0.0,
+            "offset": 0.0,
+            "temperature": 0.0,
+            "weirdness": [
+              1.0,
+              2.0
+            ]
+          }
+        }
+      ]
+    },
+    "settings": "rocketnautics:moon"
+  }
+}

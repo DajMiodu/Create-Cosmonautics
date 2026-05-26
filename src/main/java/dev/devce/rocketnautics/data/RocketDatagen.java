@@ -2,8 +2,8 @@ package dev.devce.rocketnautics.data;
 
 import dev.devce.rocketnautics.data.recipe.*;
 import dev.devce.rocketnautics.data.worldgen.*;
-import dev.devce.rocketnautics.data.worldgen.noise.Noise;
-import dev.devce.rocketnautics.data.worldgen.noise.NoiseDensities;
+import dev.devce.rocketnautics.data.worldgen.noise.NoiseData;
+import dev.devce.rocketnautics.data.worldgen.noise.NoiseRouterData;
 import dev.devce.rocketnautics.data.worldgen.noise.NoiseGenSettings;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
@@ -33,12 +33,13 @@ public class RocketDatagen {
         RegistrySetBuilder registry = new RegistrySetBuilder();
         registry.add(Registries.DIMENSION_TYPE, DimensionTypes::bootstrap);
         registry.add(Registries.LEVEL_STEM, LevelStems::bootstrap);
+        registry.add(Registries.BIOME, BiomeData::bootstrap);
         registry.add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, BiomeModifiers::bootstrap);
         registry.add(Registries.PLACED_FEATURE, PlacedFeatures::bootstrap);
         registry.add(Registries.CONFIGURED_FEATURE, ConfiguredFeatures::bootstrap);
         registry.add(Registries.NOISE_SETTINGS, NoiseGenSettings::bootstrap);
-        registry.add(Registries.NOISE, Noise::bootstrap);
-        registry.add(Registries.DENSITY_FUNCTION, NoiseDensities::bootstrap);
+        registry.add(Registries.NOISE, NoiseData::bootstrap);
+        registry.add(Registries.DENSITY_FUNCTION, NoiseRouterData::bootstrap);
         event.createDatapackRegistryObjects(registry);
     }
 }

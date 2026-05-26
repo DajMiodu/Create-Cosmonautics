@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "id": "rocketnautics:lunar_highlands",
+      "required": false
+    },
+    {
+      "id": "rocketnautics:lunar_aged_chasm",
+      "required": false
+    },
+    {
+      "id": "rocketnautics:lunar_aged_spikes",
+      "required": false
+    }
+  ]
+}

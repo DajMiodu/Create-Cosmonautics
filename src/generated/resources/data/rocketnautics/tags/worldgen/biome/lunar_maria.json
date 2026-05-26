@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "id": "rocketnautics:lunar_maria",
+      "required": false
+    },
+    {
+      "id": "rocketnautics:lunar_basalt_chasm",
+      "required": false
+    },
+    {
+      "id": "rocketnautics:lunar_basalt_spikes",
+      "required": false
+    }
+  ]
+}

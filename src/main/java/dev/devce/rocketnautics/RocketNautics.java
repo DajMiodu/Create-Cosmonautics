@@ -66,6 +66,8 @@ public class RocketNautics {
         modContainer.registerConfig(ModConfig.Type.SERVER, (net.neoforged.fml.config.IConfigSpec) RocketConfig.SERVER_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, (net.neoforged.fml.config.IConfigSpec) RocketConfig.CLIENT_SPEC);
 
+        RocketDensityFunctions.register(modEventBus);
+
         modEventBus.addListener(RocketDatagen::gatherData);
 
         // Register registries
