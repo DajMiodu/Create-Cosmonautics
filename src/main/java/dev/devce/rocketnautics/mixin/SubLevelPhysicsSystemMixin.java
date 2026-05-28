@@ -33,18 +33,20 @@ public abstract class SubLevelPhysicsSystemMixin {
             return;
         }
         DeepSpaceInstance handling = DeepSpaceData.getInstance(container.getLevel().getServer()).getInstanceForPos((int) position.x(), (int) position.z());
-        if (handling == null) return;
-        Vector3dc center = handling.getCenter();
-        Vector3d offset = position.sub(center, new Vector3d());
         RigidBodyHandle handle = this.getPhysicsHandle(subLevel);
         Vector3d correction = handle.getLinearVelocity(new Vector3d());
+        if (handling == null) {
+            handle.addLinearAndAngularVelocity(correction.negate(), new Vector3d());
+        }
+        Vector3dc center = handling.getCenter();
+        Vector3d offset = position.sub(center, new Vector3d());
         if (correction.lengthSquared() <= 1e-10) {
             // just register our mass, skipping any calculation
             handling.applyVelocity(subLevel.getUniqueId(), correction.zero(), subLevel.getMassTracker().getMass());
             return;
         }
         double dot = offset.dot(correction);
-        double radiusFactor = 4d / (handling.getSideLength() * handling.getSideLength());
+        double radiusFactor = subLevel.boundingBox().size().length() * 32d / (handling.getSideLength() * handling.getSideLength() * handling.getSideLength());
         // part 1 of our correction is a damping factor based on the actual velocity and distance to instance edge.
         // part 2 of our correction is a reduction of the component moving away from the center.
         correction.mulAdd(Math.min(0.8, offset.lengthSquared() * radiusFactor),
