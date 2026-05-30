@@ -9,6 +9,8 @@ import dev.devce.rocketnautics.content.RocketDimensions;
 import dev.devce.rocketnautics.content.orbit.DeepSpaceData;
 import dev.devce.rocketnautics.content.orbit.DeepSpaceInstance;
 import dev.devce.rocketnautics.content.orbit.universe.CubePlanet;
+import dev.devce.rocketnautics.mixin.DistanceManagerAccessor;
+import dev.devce.rocketnautics.network.DebugLogPayload;
 import dev.devce.rocketnautics.network.SeamlessTransitionPayload;
 import dev.egg.SubLevelWarper;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
@@ -192,7 +194,7 @@ public class SpaceTransitionHandler {
                     deepSpace.getChunkSource().chunkMap.getDistanceManager().addRegionTicket(TicketType.UNKNOWN, cPos, 1, cPos);
                     map.updateChunkStatus(cPos, true);
                 });
-                deepSpace.getChunkSource().chunkMap.getDistanceManager().tickingTicketsTracker.runAllUpdates();
+                ((DistanceManagerAccessor) deepSpace.getChunkSource().chunkMap.getDistanceManager()).rocketnautics$tickingTicketsTracker().runAllUpdates();
                 map.processChanges();
                 exitLoadedFromDeepSpace(instance, deepSpace, rot, destLevel, destPos, seen);
                 part.forEach(cPos -> {

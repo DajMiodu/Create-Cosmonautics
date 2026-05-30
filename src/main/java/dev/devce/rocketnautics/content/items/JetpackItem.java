@@ -8,6 +8,7 @@ import dev.devce.rocketnautics.RocketConfig;
 import dev.devce.rocketnautics.api.capability.IBacktank;
 import dev.devce.rocketnautics.api.capability.JetpackFluidHandlerItemStack;
 import dev.devce.rocketnautics.content.physics.GlobalSpacePhysicsHandler;
+import dev.devce.rocketnautics.mixin.BucketItemAccessor;
 import dev.devce.rocketnautics.mixin.LivingEntityAccessor;
 import dev.devce.rocketnautics.registry.RocketDataComponents;
 import dev.devce.rocketnautics.registry.RocketItems;
@@ -231,7 +232,7 @@ public class JetpackItem extends ArmorItem implements IBacktank {
                     ourCap.fill(drained, IFluidHandler.FluidAction.EXECUTE);
                     carriedSlotAccess.set(otherCap.getContainer());
                     if (other.getItem() instanceof BucketItem b) {
-                        b.playEmptySound(player, player.level(), player.blockPosition());
+                        ((BucketItemAccessor) b).rocketnautics$playEmptySound(player, player.level(), player.blockPosition());
                     }
                     return true;
                 }

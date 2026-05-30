@@ -10,6 +10,7 @@ import dev.devce.rocketnautics.content.blocks.HologramTableBlockEntity;
 import dev.devce.rocketnautics.content.orbit.universe.CubePlanet;
 import dev.devce.rocketnautics.content.orbit.universe.DeepSpacePosition;
 import dev.devce.rocketnautics.content.orbit.universe.UniverseDefinition;
+import dev.devce.rocketnautics.mixin.GameRendererAccessor;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import it.unimi.dsi.fastutil.Pair;
@@ -82,7 +83,7 @@ public class HologramTableRenderer extends SafeBlockEntityRenderer<HologramTable
         Frame largestFrame = pair.left();
         if (position != null) {
             int steps = RocketConfig.CLIENT.orbitPredictionSteps.getAsInt();
-            double fov = minecraft.gameRenderer.getFov(camera, partialTicks, true);
+            double fov = ((GameRendererAccessor)minecraft.gameRenderer).rocketnautics$getFov(camera, partialTicks, true);
             float s = (float) (0.01 * Math.sqrt(holoSize) * Math.tan(Math.toRadians(fov) / 2));
             DebugRenderer.renderFilledBox(ms, bufferSource, -s, -s, -s, s, s, s, 0.0f, 1.0f, 0.8f, 0.8f);
             renderVelocityVector(position.getCurrentOrbit().getPVCoordinates(renderDate, largestFrame).getVelocity(), bufferSource, ms, camera);
