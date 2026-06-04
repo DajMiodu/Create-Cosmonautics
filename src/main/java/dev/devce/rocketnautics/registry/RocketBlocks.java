@@ -125,6 +125,16 @@ public class RocketBlocks {
             .tag(RocketTags.BlockTags.HALF_VOLUME.tag, RocketTags.BlockTags.HEAVY.tag)
             .item(RocketBlockItem::new)
             .transform(RocketItems.noGeneratedModel())
+            .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                    .pattern("   ")
+                    .pattern("AGA")
+                    .pattern("IBI")
+                    .define('A', Items.AMETHYST_SHARD)
+                    .define('G', Items.GLASS)
+                    .define('I', Items.IRON_INGOT)
+                    .define('B', RocketBlocks.TITANIUM_BLOCK)
+                    .unlockedBy("has_iron_block", prov.has(RocketBlocks.TITANIUM_BLOCK))
+                    .save(prov))
             .build()
             .register();
 
