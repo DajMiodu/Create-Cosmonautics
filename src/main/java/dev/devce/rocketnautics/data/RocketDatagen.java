@@ -27,6 +27,7 @@ public class RocketDatagen {
         event.addProvider(new RocketUniverseProvider(output, registries));
 
         event.addProvider(new RocketCrushingRecipeGen(output, registries));
+        event.addProvider(new RocketItemApplicationRecipeGen(output, registries));
         event.addProvider(new RocketMechanicalCraftingRecipeGen(output, registries));
         event.addProvider(new RocketMillingRecipeGen(output, registries));
         event.addProvider(new RocketMixingRecipeGen(output, registries));
