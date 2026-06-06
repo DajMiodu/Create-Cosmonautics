@@ -50,7 +50,7 @@ public interface SerializableRotation {
         public static final MapCodec<Velocity> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 DeepSpaceHelper.DATE_CODEC.optionalFieldOf("starting_date", DeepSpaceHelper.EPOCH).forGetter(Velocity::startingDate),
                 DeepSpaceHelper.ROTATION_CODEC.optionalFieldOf("starting_rotation", Rotation.IDENTITY).forGetter(Velocity::startingRotation),
-                DeepSpaceHelper.VEC3D_CODEC.fieldOf("position").forGetter(Velocity::velocity)
+                DeepSpaceHelper.VEC3D_CODEC.fieldOf("velocity").forGetter(Velocity::velocity)
         ).apply(instance, Velocity::new));
 
         public static Velocity of(Vector3D velocity) {

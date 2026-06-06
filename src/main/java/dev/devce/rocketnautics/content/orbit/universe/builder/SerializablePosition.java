@@ -90,7 +90,7 @@ public interface SerializablePosition {
 
     record FullOrbitPosition(AbsoluteDate coordinateDate, Vector3D position, Vector3D velocity) implements SerializablePosition {
         public static final MapCodec<FullOrbitPosition> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                DeepSpaceHelper.DATE_CODEC.fieldOf("coordinate_date").forGetter(FullOrbitPosition::coordinateDate),
+                DeepSpaceHelper.DATE_CODEC.optionalFieldOf("coordinate_date", DeepSpaceHelper.EPOCH).forGetter(FullOrbitPosition::coordinateDate),
                 DeepSpaceHelper.VEC3D_CODEC.fieldOf("position").forGetter(FullOrbitPosition::position),
                 DeepSpaceHelper.VEC3D_CODEC.fieldOf("velocity").forGetter(FullOrbitPosition::velocity)
         ).apply(instance, FullOrbitPosition::new));
@@ -137,7 +137,7 @@ public interface SerializablePosition {
 
     record CircularOrbitPosition(AbsoluteDate coordinateDate, Vector3D position, Vector3D orbitAxis) implements SerializablePosition {
         public static final MapCodec<CircularOrbitPosition> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                DeepSpaceHelper.DATE_CODEC.fieldOf("coordinate_date").forGetter(CircularOrbitPosition::coordinateDate),
+                DeepSpaceHelper.DATE_CODEC.optionalFieldOf("coordinate_date", DeepSpaceHelper.EPOCH).forGetter(CircularOrbitPosition::coordinateDate),
                 DeepSpaceHelper.VEC3D_CODEC.fieldOf("position").forGetter(CircularOrbitPosition::position),
                 DeepSpaceHelper.VEC3D_CODEC.fieldOf("orbit_axis").forGetter(CircularOrbitPosition::orbitAxis)
         ).apply(instance, CircularOrbitPosition::new));
@@ -187,7 +187,7 @@ public interface SerializablePosition {
 
     record CircularOrbitPeriod(AbsoluteDate coordinateDate, Optional<Vector3D> positionDirection, Vector3D orbitAxis, double periodSeconds) implements SerializablePosition {
         public static final MapCodec<CircularOrbitPeriod> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                DeepSpaceHelper.DATE_CODEC.fieldOf("coordinate_date").forGetter(CircularOrbitPeriod::coordinateDate),
+                DeepSpaceHelper.DATE_CODEC.optionalFieldOf("coordinate_date", DeepSpaceHelper.EPOCH).forGetter(CircularOrbitPeriod::coordinateDate),
                 DeepSpaceHelper.VEC3D_CODEC.optionalFieldOf("position_direction").forGetter(CircularOrbitPeriod::positionDirection),
                 DeepSpaceHelper.VEC3D_CODEC.fieldOf("orbit_axis").forGetter(CircularOrbitPeriod::orbitAxis),
                 Codec.DOUBLE.fieldOf("period_seconds").forGetter(CircularOrbitPeriod::periodSeconds)

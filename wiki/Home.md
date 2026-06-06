@@ -1,0 +1,5 @@
+## Adding your own universe with Cosmonautics
+The Cosmonautics universe is loaded dynamically from JSON files at runtime, allowing it to be modified using datapacks instead of through an addon mod. Familiarity with datapacks is recommended. Introductory guides to datapacks are commonly available across the internet.
+
+The pages below detail how to customize the universe components currently supported by Cosmonautics:
+- [Cube Planets](https://github.com/CosmonauticsTeam/Create-Cosmonautics/wiki/Cube-Planets)
