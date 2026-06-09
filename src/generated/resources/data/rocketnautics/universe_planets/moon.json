@@ -4,8 +4,26 @@
   "dimension_data": {
     "allowed_transfer": "all",
     "apply_gravity_correction_to_entities_in_dimension": true,
+    "atmosphere_composition": {
+      "21000": [
+        "low_density",
+        "drowning"
+      ]
+    },
     "dimension_day_time_controller_name": "sol",
     "dimension_transfer_height": 20000,
+    "entity_drag_multiplier": [
+      {
+        "altitude": 4000.0,
+        "slope": 0.0,
+        "value": 1.0
+      },
+      {
+        "altitude": 7000.0,
+        "slope": -6.0E-4,
+        "value": 0.0
+      }
+    ],
     "linked_dimension": "rocketnautics:moon",
     "render_universe_in_dimension": true
   },
