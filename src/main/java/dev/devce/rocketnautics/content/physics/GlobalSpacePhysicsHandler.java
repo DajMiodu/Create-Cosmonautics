@@ -1,5 +1,6 @@
 package dev.devce.rocketnautics.content.physics;
 
+import com.simibubi.create.content.equipment.armor.BacktankUtil;
 import dev.devce.rocketnautics.RocketNautics;
 import dev.devce.rocketnautics.api.orbit.AtmosphereFlags;
 import dev.devce.rocketnautics.api.orbit.DeepSpaceHelper;
@@ -27,6 +28,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingBreatheEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -409,6 +411,15 @@ public class GlobalSpacePhysicsHandler {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onFallDamage(LivingFallEvent event) {
+        if (DeepSpaceHelper.getDataForDimension(event.getEntity().level()).map(PlanetDimensionData::applyGravityCorrectionToEntities).orElse(false)) {
+            double gravity = DimensionPhysicsData.getGravity(event.getEntity().level()).y();
+            double normalGravity = -11f;
+            event.setDistance((float) (event.getDistance() * gravity / normalGravity));
+        }
+    }
+
     public static @NotNull EnumSet<AtmosphereFlags> getFlags(LivingEntity entity) {
         if (DeepSpaceHelper.isDeepSpace(entity.level())) {
             return EnumSet.of(AtmosphereFlags.DROWNING, AtmosphereFlags.LOW_DENSITY);
@@ -420,6 +431,7 @@ public class GlobalSpacePhysicsHandler {
     }
 
     public static boolean shouldDisplayTimer(Player player) {
+        if (BacktankUtil.getAllWithAir(player).isEmpty()) return false;
         return getFlags(player).contains(AtmosphereFlags.DROWNING) || JetpackItem.isActive(player) || LegThrustersItem.legThrustersActive(player);
     }
 
