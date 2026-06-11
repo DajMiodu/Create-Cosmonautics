@@ -22,12 +22,7 @@ public class RocketThrusterBlock extends AbstractRocketThrusterBlock<RocketThrus
         return CODEC;
     }
 
-    @Nullable
-    @Override
-    public <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
-        // TODO attach this as a behavior in the block entity instead
-        return type == getBlockEntityType() ? (level1, pos, state1, blockEntity) -> RocketThrusterBlockEntity.tick(level1, pos, state1, (RocketThrusterBlockEntity) blockEntity) : null;
-    }
+
 
     @Override
     public Class<RocketThrusterBlockEntity> getBlockEntityClass() {

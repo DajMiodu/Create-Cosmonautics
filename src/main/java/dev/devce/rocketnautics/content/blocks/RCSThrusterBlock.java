@@ -27,12 +27,7 @@ public class RCSThrusterBlock extends AbstractRocketThrusterBlock<RCSThrusterBlo
         return CODEC;
     }
 
-    @Nullable
-    @Override
-    public <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
-        // TODO attach this as a behavior in the block entity instead
-        return type == RocketBlockEntities.RCS_THRUSTER.get() ? (level1, pos, state1, blockEntity) -> RCSThrusterBlockEntity.tick(level1, pos, state1, (RCSThrusterBlockEntity) blockEntity) : null;
-    }
+
 
     protected static final VoxelShape UP_SHAPE = Block.box(6, 0, 6, 10, 12, 10);
     protected static final VoxelShape DOWN_SHAPE = Block.box(6, 4, 6, 10, 16, 10);

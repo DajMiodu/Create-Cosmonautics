@@ -285,6 +285,7 @@ public class RocketNauticsClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         RocketPartials.init();
+        dev.devce.rocketnautics.content.blocks.ThrusterClientHandler.init();
 
 
         net.neoforged.fml.ModLoadingContext.get().registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class,
@@ -299,16 +300,31 @@ public class RocketNauticsClient {
         event.registerBlockEntityRenderer(RocketBlockEntities.VECTOR_THRUSTER.get(), VectorThrusterRenderer::new);
         event.registerBlockEntityRenderer(RocketBlockEntities.ROCKET_THRUSTER.get(), RocketThrusterRenderer::new);
         event.registerBlockEntityRenderer(RocketBlockEntities.BOOSTER_THRUSTER.get(), BoosterThrusterRenderer::new);
+        event.registerBlockEntityRenderer(RocketBlockEntities.THRUSTER_MOUNT.get(), dev.devce.rocketnautics.client.render.ThrusterMountRenderer::new);
+        event.registerBlockEntityRenderer(RocketBlockEntities.ENGINE_PIPES.get(), dev.devce.rocketnautics.client.render.EnginePipesRenderer::new);
+        event.registerBlockEntityRenderer(RocketBlockEntities.ENGINE_NOZZLE.get(), dev.devce.rocketnautics.client.render.EngineNozzleRenderer::new);
     }
 
     @SubscribeEvent
     public static void registerModels(ModelEvent.RegisterAdditional event) {
         event.register(RocketPartials.VECTOR_THRUSTER_NOZZLE_MODEL);
+        event.register(RocketPartials.ENGINE_NOZZLE_MODEL);
+        event.register(RocketPartials.ENGINE_PIPES_BASE_MODEL);
+        event.register(RocketPartials.ENGINE_PIPES_CLOSED_MODEL);
+        event.register(RocketPartials.ENGINE_PIPES_OPEN_MODEL);
+        event.register(RocketPartials.ENGINE_PIPES_FULLFLOW_MODEL);
+        event.register(RocketPartials.ENGINE_PIPES_EXPANDER_MODEL);
     }
 
     @SubscribeEvent
     public static void onModelBake(ModelEvent.BakingCompleted event) {
         RocketPartials.vectorThrusterNozzle = event.getModels().get(RocketPartials.VECTOR_THRUSTER_NOZZLE_MODEL);
+        RocketPartials.engineNozzle = event.getModels().get(RocketPartials.ENGINE_NOZZLE_MODEL);
+        RocketPartials.enginePipesBase = event.getModels().get(RocketPartials.ENGINE_PIPES_BASE_MODEL);
+        RocketPartials.enginePipesClosed = event.getModels().get(RocketPartials.ENGINE_PIPES_CLOSED_MODEL);
+        RocketPartials.enginePipesOpen = event.getModels().get(RocketPartials.ENGINE_PIPES_OPEN_MODEL);
+        RocketPartials.enginePipesFullflow = event.getModels().get(RocketPartials.ENGINE_PIPES_FULLFLOW_MODEL);
+        RocketPartials.enginePipesExpander = event.getModels().get(RocketPartials.ENGINE_PIPES_EXPANDER_MODEL);
     }
 
     /**

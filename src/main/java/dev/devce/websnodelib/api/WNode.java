@@ -55,6 +55,14 @@ public class WNode {
     }
 
     /**
+     * Returns the current evaluator so callers can wrap it with additional logic.
+     * @return The current Evaluator instance.
+     */
+    public Evaluator getEvaluator() {
+        return evaluator;
+    }
+
+    /**
      * Executes the node's custom logic.
      */
     public void evaluate() {

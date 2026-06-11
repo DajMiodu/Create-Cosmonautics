@@ -7,10 +7,30 @@ import net.minecraft.resources.ResourceLocation;
 
 public class RocketPartials {
 
-    public static final ModelResourceLocation VECTOR_THRUSTER_NOZZLE_MODEL = 
+    public static final ModelResourceLocation VECTOR_THRUSTER_NOZZLE_MODEL =
         new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/vector_thruster_nozzle"), "standalone");
-    
+
+    public static final ModelResourceLocation ENGINE_NOZZLE_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_nozzle"), "standalone");
+
+    public static final ModelResourceLocation ENGINE_PIPES_BASE_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_pipes_base"), "standalone");
+
+    public static final ModelResourceLocation ENGINE_PIPES_CLOSED_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_pipes_closed"), "standalone");
+    public static final ModelResourceLocation ENGINE_PIPES_OPEN_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_pipes_open"), "standalone");
+    public static final ModelResourceLocation ENGINE_PIPES_FULLFLOW_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_pipes_fullflow"), "standalone");
+    public static final ModelResourceLocation ENGINE_PIPES_EXPANDER_MODEL = 
+        new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "block/engine_pipes_expander"), "standalone");
     public static BakedModel vectorThrusterNozzle;
+    public static BakedModel engineNozzle;
+    public static BakedModel enginePipesBase;
+    public static BakedModel enginePipesClosed;
+    public static BakedModel enginePipesOpen;
+    public static BakedModel enginePipesFullflow;
+    public static BakedModel enginePipesExpander;
 
     public static void init() {
         

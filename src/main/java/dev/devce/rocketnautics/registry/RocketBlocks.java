@@ -14,6 +14,7 @@ import dev.devce.rocketnautics.RocketNautics;
 import dev.devce.rocketnautics.RocketSpriteShifts;
 import dev.devce.rocketnautics.content.RocketBlockItem;
 import dev.devce.rocketnautics.content.blocks.*;
+import dev.devce.rocketnautics.content.blocks.hose.HoseAnchorBlock;
 import dev.devce.rocketnautics.content.blocks.world.MossBlock;
 import dev.devce.rocketnautics.content.blocks.world.RockBlock;
 import dev.simulated_team.simulated.index.SimTags;
@@ -88,6 +89,41 @@ public class RocketBlocks {
             .transform(existingDirectionalModel("rcs_thruster"))
             .item(RocketBlockItem::new).build().register();
 
+    public static final BlockEntry<ThrusterMountBlock> THRUSTER_MOUNT = REGISTRATE.block("thruster_mount", ThrusterMountBlock::new)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .transform(existingDirectionalModel("thruster_mount"))
+            .item(RocketBlockItem::new)
+            .transform(RocketItems.noGeneratedModel())
+            .build().register();
+
+    public static final BlockEntry<EnginePipesBlock> ENGINE_PIPES = REGISTRATE.block("engine_pipes", EnginePipesBlock::new)
+            .initialProperties(() -> Blocks.COPPER_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .transform(existingDirectionalModel("engine_pipes_open"))
+            .item(RocketBlockItem::new)
+            .transform(RocketItems.noGeneratedModel())
+            .build().register();
+
+    public static final BlockEntry<EngineNozzleBlock> ENGINE_NOZZLE = REGISTRATE.block("engine_nozzle", EngineNozzleBlock::new)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .transform(existingDirectionalModel("engine_nozzle"))
+            .item(RocketBlockItem::new)
+            .transform(RocketItems.noGeneratedModel())
+            .build().register();
+
+    public static final BlockEntry<HoseAnchorBlock> HOSE_ANCHOR = REGISTRATE.block("hose_anchor", HoseAnchorBlock::new)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .transform(existingDirectionalModel("hose_anchor"))
+            .item(RocketBlockItem::new)
+            .transform(RocketItems.noGeneratedModel())
+            .build().register();
 
     public static final BlockEntry<SeparatorBlock> SEPARATOR = REGISTRATE.block("separator", SeparatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)

@@ -5,6 +5,8 @@ import dev.devce.rocketnautics.RocketNautics;
 import dev.devce.rocketnautics.client.render.HologramTableRenderer;
 import dev.devce.rocketnautics.client.render.VectorThrusterRenderer;
 import dev.devce.rocketnautics.content.blocks.*;
+import dev.devce.rocketnautics.content.blocks.hose.HoseAnchorBlockEntity;
+import dev.devce.rocketnautics.content.blocks.hose.client.HoseAnchorRenderer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -54,6 +56,30 @@ public class RocketBlockEntities {
             .validBlocks(RocketBlocks.MAGNETIC_STABILIZER)
             .register();
 
+    public static final BlockEntityEntry<HoseAnchorBlockEntity> HOSE_ANCHOR = REGISTRATE
+            .blockEntity("hose_anchor", HoseAnchorBlockEntity::new)
+            .validBlocks(RocketBlocks.HOSE_ANCHOR)
+            .renderer(() -> HoseAnchorRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<ThrusterMountBlockEntity> THRUSTER_MOUNT = REGISTRATE
+            .blockEntity("thruster_mount", ThrusterMountBlockEntity::new)
+            .validBlocks(RocketBlocks.THRUSTER_MOUNT)
+            .renderer(() -> dev.devce.rocketnautics.client.render.ThrusterMountRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<EnginePipesBlockEntity> ENGINE_PIPES = REGISTRATE
+            .blockEntity("engine_pipes", EnginePipesBlockEntity::new)
+            .validBlocks(RocketBlocks.ENGINE_PIPES)
+            .renderer(() -> dev.devce.rocketnautics.client.render.EnginePipesRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<EngineNozzleBlockEntity> ENGINE_NOZZLE = REGISTRATE
+            .blockEntity("engine_nozzle", EngineNozzleBlockEntity::new)
+            .validBlocks(RocketBlocks.ENGINE_NOZZLE)
+            .renderer(() -> dev.devce.rocketnautics.client.render.EngineNozzleRenderer::new)
+            .register();
+
     public static void register(IEventBus eventBus) {
         eventBus.addListener(RocketBlockEntities::registerCapabilities);
     }
@@ -61,7 +87,21 @@ public class RocketBlockEntities {
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ROCKET_THRUSTER.get(), (be, side) -> be.fuelTank);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, VECTOR_THRUSTER.get(), (be, side) -> be.fuelTank);
-
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, HOSE_ANCHOR.get(), (be, side) -> be.fuelTank);
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, THRUSTER_MOUNT.get(), (be, side) -> {
+            if (side == null) return be.combinedFluidHandler;
+            net.minecraft.world.level.block.state.BlockState state = be.getBlockState();
+            if (state.getBlock() instanceof dev.devce.rocketnautics.content.blocks.ThrusterMountBlock) {
+                net.minecraft.core.Direction facing = state.getValue(dev.devce.rocketnautics.content.blocks.ThrusterMountBlock.FACING);
+                if (side == be.getInput1(facing)) {
+                    return be.tank1;
+                }
+                if (side == be.getInput2(facing)) {
+                    return be.tank2;
+                }
+            }
+            return null;
+        });
 
         if (net.neoforged.fml.ModList.get().isLoaded("computercraft")) {
             dev.devce.rocketnautics.compat.computercraft.ComputerCraftCompat.registerCapabilities(event);

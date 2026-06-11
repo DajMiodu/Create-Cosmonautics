@@ -1,0 +1,108 @@
+{
+  "variants": {
+    "facing=down,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 180
+    },
+    "facing=down,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 180
+    },
+    "facing=down,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 180
+    },
+    "facing=down,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 180
+    },
+    "facing=east,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90
+    },
+    "facing=north,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90
+    },
+    "facing=north,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90
+    },
+    "facing=north,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90
+    },
+    "facing=south,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open"
+    },
+    "facing=up,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open"
+    },
+    "facing=up,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open"
+    },
+    "facing=up,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open"
+    },
+    "facing=west,pipe_type=0": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,pipe_type=1": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,pipe_type=2": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,pipe_type=3": {
+      "model": "rocketnautics:block/engine_pipes_open",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

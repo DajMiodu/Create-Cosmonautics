@@ -37,26 +37,6 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
     }
 
     @Override
-    public boolean isSignalSource(BlockState state) {
-        return true;
-    }
-
-    @Override
-    public int getSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, net.minecraft.core.Direction direction) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof SputnikBlockEntity sputnik) {
-            return sputnik.getSignal(direction.getOpposite());
-        }
-        return 0;
-    }
-
-    @Override
-    public int getDirectSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, net.minecraft.core.Direction direction) {
-        return getSignal(state, level, pos, direction);
-    }
-
-
-    @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
@@ -91,10 +71,6 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof SputnikBlockEntity sputnik) {
-                sputnik.releaseChunk();
-            }
             super.onRemove(state, level, pos, newState, isMoving);
         }
     }

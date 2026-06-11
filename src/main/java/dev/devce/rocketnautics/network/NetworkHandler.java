@@ -124,8 +124,6 @@ public class NetworkHandler {
             sputnik.graph.load(graphData);
             sputnik.graph.setContext(sputnik);
 
-            // Force immediate refresh to ensure server sees engines before next tick
-            sputnik.refreshEngines();
             sputnik.setChanged();
 /*
             if (dev.devce.rocketnautics.RocketConfig.SERVER.enableEngineDebugLogging.get()) {

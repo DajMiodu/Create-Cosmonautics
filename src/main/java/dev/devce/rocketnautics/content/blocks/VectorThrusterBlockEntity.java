@@ -1,7 +1,5 @@
 package dev.devce.rocketnautics.content.blocks;
 
-import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
-import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -9,7 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.joml.Vector3d;
+import net.minecraft.world.phys.Vec3;
 
 public class VectorThrusterBlockEntity extends RocketThrusterBlockEntity {
     @Override
@@ -42,10 +40,9 @@ public class VectorThrusterBlockEntity extends RocketThrusterBlockEntity {
         return 10;
     }
 
-    @Override
-    public Vector3d getParticleDirection() {
+    public Vec3 getGimbaledExhaustDirection() {
         Direction nozzle = getThrustDirection();
-        return new Vector3d(
+        return new Vec3(
                 nozzle.getStepX() + gimbalX,
                 nozzle.getStepY() + gimbalY,
                 nozzle.getStepZ() + gimbalZ).normalize();
@@ -60,8 +57,6 @@ public class VectorThrusterBlockEntity extends RocketThrusterBlockEntity {
         this.ccGimbalTimeout = 5;
         setChanged();
     }
-
-
 
     public void updateGimbalAngles() {
         if (level == null)
@@ -118,38 +113,22 @@ public class VectorThrusterBlockEntity extends RocketThrusterBlockEntity {
         setComputerGimbal(xOffset, 0, zOffset);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, VectorThrusterBlockEntity blockEntity) {
-        blockEntity.prevGimbalX = blockEntity.gimbalX;
-        blockEntity.prevGimbalY = blockEntity.gimbalY;
-        blockEntity.prevGimbalZ = blockEntity.gimbalZ;
-
-        blockEntity.updateGimbalAngles();
-
-        RocketThrusterBlockEntity.tick(level, pos, state, blockEntity);
-    }
-
     @Override
-    public void sable$physicsTick(ServerSubLevel serverSubLevel, RigidBodyHandle handle, double deltaTime) {
-        if (!isActive())
-            return;
+    public void tick() {
+        prevGimbalX = gimbalX;
+        prevGimbalY = gimbalY;
+        prevGimbalZ = gimbalZ;
 
-        Direction facing = getThrustDirection();
-        Direction pushDirection = facing.getOpposite();
+        updateGimbalAngles();
 
-        double vx = pushDirection.getStepX() - gimbalX;
-        double vy = pushDirection.getStepY() - gimbalY;
-        double vz = pushDirection.getStepZ() - gimbalZ;
+        super.tick();
 
-        double length = Math.sqrt(vx * vx + vy * vy + vz * vz);
-        if (length < 0.001)
-            return;
-
-        double currentThrust = getCurrentPower() * 50.0;
-        Vector3d thrustVector = new Vector3d(vx / length, vy / length, vz / length).mul(currentThrust);
-
-        Vector3d blockCenter = new Vector3d(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5,
-                worldPosition.getZ() + 0.5);
-        handle.applyImpulseAtPoint(blockCenter, thrustVector.mul(deltaTime));
+        thrust.update(
+                getCurrentPower() * 50.0f,
+                fuelThrottle,
+                getGimbaledExhaustDirection(),
+                isActive()
+        );
     }
 
     @Override

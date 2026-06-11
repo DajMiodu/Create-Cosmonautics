@@ -31,6 +31,12 @@ public class RocketNauticsClientEvents {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 
+        dev.simulated_team.simulated.content.blocks.rope.strand.client.ClientLevelRopeManager ropeManager =    
+                dev.simulated_team.simulated.content.blocks.rope.strand.client.ClientLevelRopeManager.getOrCreate(mc.level);
+        if (ropeManager != null) {
+            ropeManager.tickInterpolation((double) mc.level.getGameTime());
+        }
+
         // Force minimum render distance during seamless dimension transitions
         if (RocketNauticsClient.seamlessTransitionTicks > 0) {
             if (mc.options.renderDistance().get() > 2) {

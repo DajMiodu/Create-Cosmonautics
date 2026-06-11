@@ -902,7 +902,17 @@ public class WNodeScreen extends Screen {
                             if (this.onSave != null) this.onSave.accept(this.graph.save());
                         }, this));
                         return true;
-                    } else if (node.getTypeId().getPath().equals("lua_script")) {
+                    } else if (node.getTypeId().getPath().equals("lua_script")
+                            || node.getTypeId().getPath().equals("altitude")
+                            || node.getTypeId().getPath().equals("velocity")
+                            || node.getTypeId().getPath().equals("attitude")
+                            || node.getTypeId().getPath().equals("angular_velocity")
+                            || node.getTypeId().getPath().equals("thruster_control")
+                            || node.getTypeId().getPath().equals("vector_control")
+                            || node.getTypeId().getPath().equals("rcs_control")
+                            || node.getTypeId().getPath().equals("booster_control")
+                            || node.getTypeId().getPath().equals("display")
+                            || node.getTypeId().getPath().equals("attitude_display")) {
                         minecraft.setScreen(new WLuaEditorScreen(node, this));
                         return true;
                     }
@@ -1324,25 +1334,10 @@ public class WNodeScreen extends Screen {
         
         java.util.Map<String, List<ResourceLocation>> grouped = new java.util.TreeMap<>();
         
-        java.util.Set<String> foundTypes = new java.util.HashSet<>();
-        if (graph.getContext() instanceof dev.devce.rocketnautics.content.blocks.SputnikBlockEntity sputnik) {
-            for (dev.devce.rocketnautics.api.peripherals.IPeripheral p : sputnik.getPeripherals()) {
-                if (p != null && p.getPeripheralType() != null) {
-                    foundTypes.add(p.getPeripheralType().toLowerCase());
-                }
-            }
-        }
-        
         for (net.minecraft.resources.ResourceLocation type : all) {
             String path = type.getPath().toLowerCase();
             String category = dev.devce.websnodelib.api.NodeRegistry.getCategory(type);
             String cleanCategory = category.toLowerCase().replaceAll("[^a-z0-9]", "");
-            
-            // Context-sensitive filtering
-            if (path.equals("vector_control") && !foundTypes.contains("vector_engine")) continue;
-            if (path.equals("rcs_control") && !foundTypes.contains("rcs")) continue;
-            if (path.equals("booster_control") && !foundTypes.contains("booster")) continue;
-            if (path.equals("thruster_control") && !foundTypes.contains("thruster")) continue;
             
             if (query.isEmpty() || path.contains(query) || category.toLowerCase().contains(query) || cleanCategory.contains(query)) {
                 grouped.computeIfAbsent(category, k -> new ArrayList<>()).add(type);

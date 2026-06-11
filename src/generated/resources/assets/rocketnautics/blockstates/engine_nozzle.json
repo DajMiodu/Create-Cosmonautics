@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=down,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 180
+    },
+    "facing=down,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 180
+    },
+    "facing=east,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90
+    },
+    "facing=north,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90
+    },
+    "facing=south,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle"
+    },
+    "facing=up,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle"
+    },
+    "facing=west,nozzle_type=1": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,nozzle_type=2": {
+      "model": "rocketnautics:block/engine_nozzle",
+      "x": 90,
+      "y": 270
+    }
+  }
+}
