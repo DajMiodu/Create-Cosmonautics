@@ -23,6 +23,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -96,7 +97,7 @@ public class HologramTableRenderer extends SafeBlockEntityRenderer<HologramTable
         DebugRenderer.renderFilledBox(ms, bufferSource, -s, -s, -s, s, s, s, 0.0f, 1.0f, 0.8f, 0.8f);
         double scaleFactor = holoSize / holoScale;
         if (position != null) {
-            renderVelocityVector(position.getCurrentOrbit().getPVCoordinates(renderDate, largestFrame).getVelocity(), bufferSource, ms, camera);
+            renderVelocityVector(position.getOrbit().getPVCoordinates(renderDate, largestFrame).getVelocity(), bufferSource, ms, camera);
         }
         ms.pushPose();
         Vector3D scaledPos = centerFrame.getStaticTransformTo(largestFrame, renderDate).transformPosition(posInFrame).scalarMultiply(scaleFactor);
@@ -159,8 +160,9 @@ public class HologramTableRenderer extends SafeBlockEntityRenderer<HologramTable
     private void recurseRenderPlanetOrbit(VertexConsumer buffer, PoseStack ms, double scaleFactor, KeplerianOrbit orbit, AbsoluteDate point, double len, Predicate<Vector3D> skipCondition) {
         PVCoordinates coords = orbit.getPVCoordinates(point, orbit.getFrame());
         // compute the angular velocity of the velocity vector
-        double velocityAngularVelocity = coords.getVelocity().getNormSq() < 1e-10 ? 1000 : Math.sqrt(coords.getAcceleration().getNormSq() / coords.getVelocity().getNormSq());
-        if (velocityAngularVelocity * len > Math.toRadians(RocketConfig.CLIENT.orbitPredictionAngularThreshold.get())) {
+//        double velocityAngularVelocity = coords.getVelocity().getNormSq() < 1e-10 ? 1000 : coords.getVelocity().crossProduct(coords.getAcceleration()).getNorm() / coords.getVelocity().getNormSq();
+        double correctedAngularVelocity = orbit.getEccentricAnomalyDot() / Mth.lerp(orbit.getE() * orbit.getE(), 1, 1 - coords.getVelocity().normalize().crossProduct(coords.getAcceleration().normalize()).getNorm() / 2);
+        if (correctedAngularVelocity * len > Math.toRadians(RocketConfig.CLIENT.orbitPredictionAngularThreshold.get())) {
             recurseRenderPlanetOrbit(buffer, ms, scaleFactor, orbit, point, len / 2, skipCondition);
             recurseRenderPlanetOrbit(buffer, ms, scaleFactor, orbit, point.shiftedBy(len / 2), len / 2, skipCondition);
         } else {

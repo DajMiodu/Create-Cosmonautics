@@ -45,6 +45,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.orekit.frames.Frame;
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.TimeStampedPVCoordinates;
@@ -143,14 +144,14 @@ public final class DeepSpaceHandler {
             @Override
             public Vector3D next() {
                 while (positionPredictions.size() <= index) {
-                    TimeStampedPVCoordinates coords = nextPrediction.getCurrentPVCoords();
+                    KeplerianOrbit orbit = nextPrediction.getCurrentOrbit();
+                    TimeStampedPVCoordinates coords = orbit.getPVCoordinates();
                     if (coords.getDate().isAfterOrEqualTo(renderDate)) {
-                        positionPredictions.addLast(Pair.of(coords.getDate(), nextPrediction.getCurrentOrbit()));
+                        positionPredictions.addLast(Pair.of(coords.getDate(), nextPrediction.getOrbit()));
                     }
-                    // compute the angular velocity of the velocity vector
-                    double velocityAngularVelocity = coords.getVelocity().getNormSq() < 1e-10 ? 100000 : Math.sqrt(coords.getAcceleration().getNormSq() / coords.getVelocity().getNormSq());
-                    int lookaheadTicks = (int) (20 * Math.toRadians(RocketConfig.CLIENT.orbitPredictionAngularThreshold.get()) / velocityAngularVelocity);
-                    nextPrediction.setTimescale(lookaheadTicks + 1);
+                    double correctedAngularVelocity = orbit.getEccentricAnomalyDot() / Mth.lerp(orbit.getE() * orbit.getE(), 1, 1 - coords.getVelocity().normalize().crossProduct(coords.getAcceleration().normalize()).getNorm() / 2);
+                    int lookaheadTicks = (int) (20 * Math.toRadians(RocketConfig.CLIENT.orbitPredictionAngularThreshold.get()) / correctedAngularVelocity);
+                    nextPrediction.setTimescale(Math.max(1, lookaheadTicks));
                     nextPrediction.propagate(UNIVERSE);
                 }
                 Pair<AbsoluteDate, Orbit> pair = positionPredictions.get(index);
