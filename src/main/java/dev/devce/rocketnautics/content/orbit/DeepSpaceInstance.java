@@ -82,8 +82,8 @@ public final class DeepSpaceInstance {
         tag.putLong("MinChunkCorner", minCorner.toLong());
         tag.putLong("Id", id);
         tag.putLong("LocalTicks", position.getLocalUniverseTicks());
-        tag.putString("Frame", position.getCurrentOrbit().getFrame().getName());
-        Tag c = DeepSpaceHelper.write(DeepSpaceHelper.STAMPED_PVCOORDS_CODEC, position.getCurrentOrbit().getPVCoordinates());
+        tag.putString("Frame", position.getOrbit().getFrame().getName());
+        Tag c = DeepSpaceHelper.write(DeepSpaceHelper.STAMPED_PVCOORDS_CODEC, position.getOrbit().getPVCoordinates());
         if (c != null) tag.put("Coords", c);
         return tag;
     }

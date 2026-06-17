@@ -24,7 +24,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,6 +45,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.orekit.frames.Frame;
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.TimeStampedPVCoordinates;
@@ -144,17 +144,14 @@ public final class DeepSpaceHandler {
             @Override
             public Vector3D next() {
                 while (positionPredictions.size() <= index) {
-                    // at each step, compute the distance from our orbited body, compute our current speed,
-                    // and determine the length of time it would take to travel that distance.
-                    // finally, step this amount of time multiplied by our config value.
-                    TimeStampedPVCoordinates coords = nextPrediction.getCurrentPVCoords();
-                    if (coords.getDate().isAfterOrEqualTo(renderDate) | true) {
-                        positionPredictions.addLast(Pair.of(coords.getDate(), nextPrediction.getCurrentOrbit()));
+                    KeplerianOrbit orbit = nextPrediction.getCurrentOrbit();
+                    TimeStampedPVCoordinates coords = orbit.getPVCoordinates();
+                    if (coords.getDate().isAfterOrEqualTo(renderDate)) {
+                        positionPredictions.addLast(Pair.of(coords.getDate(), nextPrediction.getOrbit()));
                     }
-                    double distance = coords.getPosition().getNorm();
-                    double speed = coords.getVelocity().getNorm();
-                    int lookaheadTicks = (int) (RocketConfig.CLIENT.orbitPredictionStepFactor.get() * distance / speed);
-                    nextPrediction.setTimescale(lookaheadTicks);
+                    double correctedAngularVelocity = orbit.getEccentricAnomalyDot() / Mth.lerp(orbit.getE() * orbit.getE(), 1, 1 - coords.getVelocity().normalize().crossProduct(coords.getAcceleration().normalize()).getNorm() / 2);
+                    int lookaheadTicks = (int) (20 * Math.toRadians(RocketConfig.CLIENT.orbitPredictionAngularThreshold.get()) / correctedAngularVelocity);
+                    nextPrediction.setTimescale(Math.max(1, lookaheadTicks));
                     nextPrediction.propagate(UNIVERSE);
                 }
                 Pair<AbsoluteDate, Orbit> pair = positionPredictions.get(index);
@@ -210,22 +207,28 @@ public final class DeepSpaceHandler {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY || UNIVERSE == null) return;
         if (!DeepSpaceHelper.isDeepSpace()) return;
-        if (receivedPositionTick == -1) return;
-        PoseStack poseStack = event.getPoseStack();
-        poseStack.pushPose();
-        poseStack.mulPose(event.getModelViewMatrix());
-        Vec3 position = event.getCamera().getPosition();
-        VoxelShape box = DeepSpaceData.getBoxForPosition(position);
-        if (box.bounds().contains(position)) {
-            float partial = event.getPartialTick().getGameTimeDeltaPartialTick(true);
-            AbsoluteDate currentDate = getRenderDate(partial);
-            renderUniverse(null, poseStack, null, event.getPartialTick().getGameTimeDeltaTicks(),
-                    partial, currentDate, receivedPosition.getPosition(currentDate), receivedPosition.getFrame(), event.getCamera());
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            if (receivedPositionTick == -1 || UNIVERSE == null) return;
+            PoseStack poseStack = event.getPoseStack();
+            poseStack.pushPose();
+            poseStack.mulPose(event.getModelViewMatrix()); // after sky is so early that the pose stack does not have the view rotation applied
+            Vec3 position = event.getCamera().getPosition();
+            VoxelShape box = DeepSpaceData.getBoxForPosition(position);
+            if (box.bounds().contains(position)) {
+                float partial = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+                AbsoluteDate currentDate = getRenderDate(partial);
+                renderUniverse(null, poseStack, null, event.getPartialTick().getGameTimeDeltaTicks(),
+                        partial, currentDate, receivedPosition.getPosition(currentDate), receivedPosition.getFrame(), event.getCamera());
+            }
+            poseStack.popPose();
+        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            PoseStack poseStack = event.getPoseStack();
+            poseStack.pushPose();
+            Vec3 position = event.getCamera().getPosition();
+            renderInstanceBox(poseStack, position);
+            poseStack.popPose();
         }
-        renderInstanceBox(poseStack, position);
-        poseStack.popPose();
     }
 
     private static boolean renderInstanceBox(PoseStack poseStack, Vec3 position) {

@@ -19,11 +19,11 @@ import java.util.Collection;
 import java.util.Optional;
 
 public class DeepSpacePosition {
-    private static final Orbit FALLBACK = new CartesianOrbit(new TimeStampedPVCoordinates(DeepSpaceHelper.EPOCH, Vector3D.PLUS_I, Vector3D.PLUS_J), Frame.getRoot(), 1);
+    private static final KeplerianOrbit FALLBACK = new KeplerianOrbit(new TimeStampedPVCoordinates(DeepSpaceHelper.EPOCH, Vector3D.PLUS_I, Vector3D.PLUS_J), Frame.getRoot(), 1);
     private static final BrentSolver SOLVER = new BrentSolver();
 
     // generated fields (for read/write operations)
-    private @NotNull Orbit currentOrbit = FALLBACK;
+    private @NotNull KeplerianOrbit currentOrbit = FALLBACK;
     private double roi = Double.NaN;
 
     // saved fields (for read/write operations)
@@ -41,7 +41,7 @@ public class DeepSpacePosition {
 
     public void init(UniverseDefinition universe, @NotNull Frame frame, @NotNull TimeStampedPVCoordinates coords) {
         PointGravitySource controlling = determineControllingGravitySource(coords, frame, universe);
-        setCurrentOrbit(createOrbitAroundSource(coords, frame, controlling), controlling.roi());
+        setOrbit(createOrbitAroundSource(coords, frame, controlling), controlling.roi());
     }
 
     public boolean isCorrupted() {
@@ -100,7 +100,7 @@ public class DeepSpacePosition {
                 transitionCoords = currentOrbit.getPVCoordinates(startTime, shouldControlling.orekitFrame());
 
             }
-            setCurrentOrbit(createOrbitAroundSource(transitionCoords, shouldControlling.orekitFrame(), shouldControlling), shouldControlling.roi());
+            setOrbit(createOrbitAroundSource(transitionCoords, shouldControlling.orekitFrame(), shouldControlling), shouldControlling.roi());
         }
         localUniverseTicks += timescale;
         return this;
@@ -138,7 +138,7 @@ public class DeepSpacePosition {
      * @param source The gravity source to orbit.
      * @return an orbit centered around the source's frame.
      */
-    private Orbit createOrbitAroundSource(TimeStampedPVCoordinates currentCoords, Frame currentFrame, PointGravitySource source) {
+    private KeplerianOrbit createOrbitAroundSource(TimeStampedPVCoordinates currentCoords, Frame currentFrame, PointGravitySource source) {
         return createOrbitAroundSource(currentCoords, currentFrame, source, Vector3D.ZERO);
     }
 
@@ -151,7 +151,7 @@ public class DeepSpacePosition {
      *                                 The acceleration in currentCoords will be ignored.
      * @return an orbit centered around the source's frame.
      */
-    private Orbit createOrbitAroundSource(TimeStampedPVCoordinates currentCoords, Frame currentFrame, PointGravitySource source, Vector3D nonKeplerianAcceleration) {
+    private KeplerianOrbit createOrbitAroundSource(TimeStampedPVCoordinates currentCoords, Frame currentFrame, PointGravitySource source, Vector3D nonKeplerianAcceleration) {
         // revise coordinates to be in the gravity source's frame.
         if (currentFrame != source.orekitFrame()) {
             currentCoords = currentFrame.getTransformTo(source.orekitFrame(), currentCoords.getDate()).transformPVCoordinates(currentCoords);
@@ -162,13 +162,17 @@ public class DeepSpacePosition {
         return new KeplerianOrbit(currentCoords, source.orekitFrame(), source.mu());
     }
 
-    public void setCurrentOrbit(@NotNull Orbit currentOrbit, double roi) {
+    public void setOrbit(@NotNull KeplerianOrbit currentOrbit, double roi) {
         this.currentOrbit = currentOrbit;
         this.roi = roi;
     }
 
-    public @NotNull Orbit getCurrentOrbit() {
+    public @NotNull KeplerianOrbit getOrbit() {
         return currentOrbit;
+    }
+
+    public @NotNull KeplerianOrbit getCurrentOrbit() {
+        return currentOrbit.shiftedBy(getLocalUniverseTime().accurateDurationFrom(currentOrbit.getDate()));
     }
 
     public void setTimescale(int timescale) {
@@ -192,7 +196,7 @@ public class DeepSpacePosition {
     }
 
     public Frame getFrame() {
-        return getCurrentOrbit().getFrame();
+        return getOrbit().getFrame();
     }
 
     public TimeStampedPVCoordinates getCurrentPVCoords() {
@@ -208,11 +212,11 @@ public class DeepSpacePosition {
      * For full physics propagation, use {@link #propagate(UniverseDefinition)} instead.
      */
     public TimeStampedPVCoordinates getPVCoords(AbsoluteDate date) {
-        return getCurrentOrbit().getPVCoordinates(date, getCurrentOrbit().getFrame());
+        return getOrbit().getPVCoordinates(date, getOrbit().getFrame());
     }
 
     public Vector3D getPosition(Frame inFrame) {
-        return getCurrentOrbit().getPosition(getLocalUniverseTime(), inFrame);
+        return getOrbit().getPosition(getLocalUniverseTime(), inFrame);
     }
 
     /**
@@ -220,12 +224,12 @@ public class DeepSpacePosition {
      * For full physics propagation, use {@link #propagate(UniverseDefinition)} instead.
      */
     public Vector3D getPosition(AbsoluteDate date) {
-        return getCurrentOrbit().getPosition(date, getCurrentOrbit().getFrame());
+        return getOrbit().getPosition(date, getOrbit().getFrame());
     }
 
     public void write(FriendlyByteBuf buf, UniverseDefinition universe) {
-        DeepSpaceHelper.STAMPED_PVCOORDS_CODEC_S.encode(buf, getCurrentOrbit().getPVCoordinates(getLocalUniverseTime(), getCurrentOrbit().getFrame()));
-        buf.writeVarInt(universe.getIDByFrameName(getCurrentOrbit().getFrame().getName()).orElse(-1));
+        DeepSpaceHelper.STAMPED_PVCOORDS_CODEC_S.encode(buf, getOrbit().getPVCoordinates(getLocalUniverseTime(), getOrbit().getFrame()));
+        buf.writeVarInt(universe.getIDByFrameName(getOrbit().getFrame().getName()).orElse(-1));
         buf.writeVarInt(timescale);
         buf.writeVarLong(localUniverseTicks);
     }

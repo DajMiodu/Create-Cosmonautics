@@ -129,6 +129,8 @@
   "subtitles.rocketnautics.high_wind": "Rushing Wind",
   "rocketnautics.display_source.sputnik": "Sputnik Node Display",
 
+  "block.rocketnautics.lunar_rock": "Lunar Rock",
+  "block.rocketnautics.lunar_fragmented_rock": "Fragmented Lunar Rock",
   "block.rocketnautics.lunar_aged_basalt": "Aged Basalt",
   "block.rocketnautics.lunar_loose_regolith": "Loose Lunar Regolith",
   "block.rocketnautics.lunar_regolith": "Lunar Regolith",
