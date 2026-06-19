@@ -8,6 +8,7 @@ import dev.devce.rocketnautics.lua.LuaUIBridge;
 import dev.devce.websnodelib.api.NodeRegistry;
 import dev.devce.websnodelib.api.WNode;
 import dev.devce.websnodelib.api.WGraph;
+import dev.devce.websnodelib.api.WPin;
 import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 import java.util.ArrayList;
@@ -187,6 +188,144 @@ public class RocketNodes {
             
             return node;
         });
+
+        // --- Radio Node ---
+        NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio"), "Communication", (x, y) -> {
+            WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio"), "Radio", x, y);
+            node.getCustomData().putString("code", "-- Radio node\n-- input(\"Freq\")\n-- output(\"Channel\")\nlocal freq = input(\"Freq\")\noutput(\"Channel\", freq)\n\n-- Auto-responder logic:\n-- if packetCode == 100 then\n--     reply(200, packetValue * 2)\n-- end");
+            node.addInput("Freq", 0xFFFFFFFF);
+            node.addOutput("Channel", 0xFF00FFFF);
+            
+            setupLuaEvaluator(node);
+            
+            WNode.Evaluator baseEval = node.getEvaluator();
+            node.setEvaluator(n -> {
+                baseEval.evaluate(n);
+                
+                if (n.getParentGraph() != null && n.getParentGraph().getContext() instanceof SputnikBlockEntity sputnik) {
+                    if (sputnik.getLevel() != null && !sputnik.getLevel().isClientSide() && sputnik.getLevel().getServer() != null) {
+                        Long dsInstanceId = null;
+                        if (dev.devce.rocketnautics.api.orbit.DeepSpaceHelper.isDeepSpace(sputnik.getLevel())) {
+                            var dsData = dev.devce.rocketnautics.content.orbit.DeepSpaceData.getInstance(sputnik.getLevel().getServer());
+                            var inst = dsData.getInstanceForPos((int) sputnik.getGlobalPos().x, (int) sputnik.getGlobalPos().z);
+                            if (inst != null) {
+                                dsInstanceId = inst.getId();
+                            }
+                        }
+                        
+                        var radioMgr = dev.devce.rocketnautics.api.radio.RadioNetworkManager.getInstance(sputnik.getLevel().getServer());
+                        String script = n.getCustomData().getString("code");
+                        double freq = 0.0;
+                        for (WPin pin : n.getInputs()) {
+                            if (pin.getName().equals("Freq")) {
+                                freq = pin.getValue();
+                                break;
+                            }
+                        }
+                        for (WPin pin : n.getOutputs()) {
+                            if (pin.getName().equals("Channel")) {
+                                pin.setValue(freq);
+                                break;
+                            }
+                        }
+                        org.joml.Vector3d pos = sputnik.getGlobalPos();
+                        String dim = sputnik.getLevel().dimension().location().toString();
+                        radioMgr.registerOrUpdateNode(n.getId(), freq, script, dsInstanceId, pos.x, pos.y, pos.z, dim);
+                    }
+                }
+            });
+            return node;
+        });
+
+        // --- Radio Send Node ---
+        NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio_send"), "Communication", (x, y) -> {
+            WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio_send"), "Radio Send", x, y);
+            node.getCustomData().putString("code", "-- Send packet\n-- input(\"Channel\")\n-- input(\"Code\")\n-- input(\"Value\")");
+            node.addInput("Channel", 0xFF00FFFF);
+            node.addInput("Code", 0xFFFFFFFF);
+            node.addInput("Value", 0xFFFFFFFF);
+            
+            setupLuaEvaluator(node);
+            
+            WNode.Evaluator baseEval = node.getEvaluator();
+            node.setEvaluator(n -> {
+                baseEval.evaluate(n);
+                
+                if (n.getParentGraph() != null && n.getParentGraph().getContext() instanceof SputnikBlockEntity sputnik) {
+                    if (sputnik.getLevel() != null && !sputnik.getLevel().isClientSide() && sputnik.getLevel().getServer() != null) {
+                        double channel = 0;
+                        double code = 0;
+                        double val = 0;
+                        for (WPin pin : n.getInputs()) {
+                            if (pin.getName().equals("Channel")) channel = pin.getValue();
+                            if (pin.getName().equals("Code")) code = pin.getValue();
+                            if (pin.getName().equals("Value")) val = pin.getValue();
+                        }
+                        
+                        if (channel != 0) {
+                            var radioMgr = dev.devce.rocketnautics.api.radio.RadioNetworkManager.getInstance(sputnik.getLevel().getServer());
+                            radioMgr.sendPacket(channel, code, val);
+                        }
+                    }
+                }
+            });
+            return node;
+        });
+
+        // --- Radio Receive Node ---
+        NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio_receive"), "Communication", (x, y) -> {
+            WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "radio_receive"), "Radio Receive", x, y);
+            node.getCustomData().putString("code", "-- Receive packet\n-- input(\"Channel\")\n-- input(\"Code\")\n-- output(\"Value\")");
+            node.addInput("Channel", 0xFF00FFFF);
+            node.addInput("Code", 0xFFFFFFFF);
+            node.addOutput("Value", 0xFFFFFFFF);
+            
+            setupLuaEvaluator(node);
+            
+            WNode.Evaluator baseEval = node.getEvaluator();
+            node.setEvaluator(n -> {
+                baseEval.evaluate(n);
+                
+                if (n.getParentGraph() != null && n.getParentGraph().getContext() instanceof SputnikBlockEntity sputnik) {
+                    if (sputnik.getLevel() != null && !sputnik.getLevel().isClientSide() && sputnik.getLevel().getServer() != null) {
+                        double channel = 0;
+                        double code = 0;
+                        for (WPin pin : n.getInputs()) {
+                            if (pin.getName().equals("Channel")) channel = pin.getValue();
+                            if (pin.getName().equals("Code")) code = pin.getValue();
+                        }
+                        
+                        var radioMgr = dev.devce.rocketnautics.api.radio.RadioNetworkManager.getInstance(sputnik.getLevel().getServer());
+                        double val = radioMgr.getLastValue(channel, code);
+                        
+                        for (WPin pin : n.getOutputs()) {
+                            if (pin.getName().equals("Value")) {
+                                pin.setValue(val);
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+            return node;
+        });
+
+        // --- Math Nodes ---
+        registerLuaNode("math_add", "Add", "Math",
+                "-- Add two values\n-- input(\"A\")\n-- input(\"B\")\n-- output(\"Out\")\nlocal a = input(\"A\")\nlocal b = input(\"B\")\noutput(\"Out\", a + b)",
+                new String[]{"A", "B"}, new String[]{"Out"});
+
+        registerLuaNode("math_subtract", "Subtract", "Math",
+                "-- Subtract two values\n-- input(\"A\")\n-- input(\"B\")\n-- output(\"Out\")\nlocal a = input(\"A\")\nlocal b = input(\"B\")\noutput(\"Out\", a - b)",
+                new String[]{"A", "B"}, new String[]{"Out"});
+
+        registerLuaNode("math_multiply", "Multiply", "Math",
+                "-- Multiply two values\n-- input(\"A\")\n-- input(\"B\")\n-- output(\"Out\")\nlocal a = input(\"A\")\nlocal b = input(\"B\")\noutput(\"Out\", a * b)",
+                new String[]{"A", "B"}, new String[]{"Out"});
+
+        registerLuaNode("math_divide", "Divide", "Math",
+                "-- Divide two values\n-- input(\"A\")\n-- input(\"B\")\n-- output(\"Out\")\nlocal a = input(\"A\")\nlocal b = input(\"B\")\noutput(\"Out\", b ~= 0 and a / b or 0)",
+                new String[]{"A", "B"}, new String[]{"Out"});
     }
 
     private static void registerLuaNode(String id, String name, String category, String defaultCode, String[] inputs, String[] outputs) {
@@ -287,6 +426,69 @@ public class RocketNodes {
                             n.getOutputs().get(i).setValue(value);
                             return LuaValue.NIL;
                         }
+                    return LuaValue.NIL;
+                }
+            });
+
+            // getDeepSpacePosition() -> returns x, y, z
+            globals[0].set("getDeepSpacePosition", new VarArgFunction() {
+                @Override public Varargs invoke(Varargs args) {
+                    if (finalSputnik != null && finalSputnik.getLevel() != null && !finalSputnik.getLevel().isClientSide() && finalSputnik.getLevel().getServer() != null) {
+                        var dsData = dev.devce.rocketnautics.content.orbit.DeepSpaceData.getInstance(finalSputnik.getLevel().getServer());
+                        var inst = dsData.getInstanceForPos((int) finalSputnik.getGlobalPos().x, (int) finalSputnik.getGlobalPos().z);
+                        if (inst != null && !inst.isCorrupted()) {
+                            var pos = inst.getPosition().getCurrentPosition();
+                            return varargsOf(new LuaValue[]{
+                                LuaValue.valueOf(pos.getX()),
+                                LuaValue.valueOf(pos.getY()),
+                                LuaValue.valueOf(pos.getZ())
+                            });
+                        }
+                    }
+                    if (finalSputnik != null) {
+                        var pos = finalSputnik.getGlobalPos();
+                        return varargsOf(new LuaValue[]{
+                            LuaValue.valueOf(pos.x),
+                            LuaValue.valueOf(pos.y),
+                            LuaValue.valueOf(pos.z)
+                        });
+                    }
+                    return varargsOf(new LuaValue[]{ LuaValue.ZERO, LuaValue.ZERO, LuaValue.ZERO });
+                }
+            });
+
+            // getDeepSpaceVelocity() -> returns vx, vy, vz
+            globals[0].set("getDeepSpaceVelocity", new VarArgFunction() {
+                @Override public Varargs invoke(Varargs args) {
+                    if (finalSputnik != null && finalSputnik.getLevel() != null && !finalSputnik.getLevel().isClientSide() && finalSputnik.getLevel().getServer() != null) {
+                        var dsData = dev.devce.rocketnautics.content.orbit.DeepSpaceData.getInstance(finalSputnik.getLevel().getServer());
+                        var inst = dsData.getInstanceForPos((int) finalSputnik.getGlobalPos().x, (int) finalSputnik.getGlobalPos().z);
+                        if (inst != null && !inst.isCorrupted()) {
+                            var vel = inst.getPosition().getCurrentPVCoords().getVelocity();
+                            return varargsOf(new LuaValue[]{
+                                LuaValue.valueOf(vel.getX()),
+                                LuaValue.valueOf(vel.getY()),
+                                LuaValue.valueOf(vel.getZ())
+                            });
+                        }
+                    }
+                    return varargsOf(new LuaValue[]{ LuaValue.ZERO, LuaValue.ZERO, LuaValue.ZERO });
+                }
+            });
+
+            // getDeepSpaceFrame() -> returns string
+            globals[0].set("getDeepSpaceFrame", new ZeroArgFunction() {
+                @Override public LuaValue call() {
+                    if (finalSputnik != null && finalSputnik.getLevel() != null && !finalSputnik.getLevel().isClientSide() && finalSputnik.getLevel().getServer() != null) {
+                        var dsData = dev.devce.rocketnautics.content.orbit.DeepSpaceData.getInstance(finalSputnik.getLevel().getServer());
+                        var inst = dsData.getInstanceForPos((int) finalSputnik.getGlobalPos().x, (int) finalSputnik.getGlobalPos().z);
+                        if (inst != null && !inst.isCorrupted()) {
+                            return LuaValue.valueOf(inst.getPosition().getFrame().getName());
+                        }
+                    }
+                    if (finalSputnik != null && finalSputnik.getLevel() != null) {
+                        return LuaValue.valueOf(finalSputnik.getLevel().dimension().location().toString());
+                    }
                     return LuaValue.NIL;
                 }
             });

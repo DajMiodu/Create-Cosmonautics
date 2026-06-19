@@ -24,15 +24,20 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollVa
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import java.util.List;
 
-public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, BlockEntitySubLevelActor, IThruster {
+public class ThrusterMountBlockEntity extends SmartBlockEntity
+        implements IHaveGoggleInformation, BlockEntitySubLevelActor, IThruster {
 
     public boolean hasPipes = false;
     public int pipeType = 0; // 0 = Closed, 1 = Open, 2 = Full-flow, 3 = Expander
     public int nozzleType = 0; // 0 = None, 1 = Copper, 2 = Titanium
     public int inputs = 1;
 
-    public final FluidTank tank1 = new FluidTank(1000, stack -> stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER) || stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA));
-    public final FluidTank tank2 = new FluidTank(1000, stack -> stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER) || stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA));
+    public final FluidTank tank1 = new FluidTank(1000,
+            stack -> stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)
+                    || stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA));
+    public final FluidTank tank2 = new FluidTank(1000,
+            stack -> stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)
+                    || stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA));
 
     public boolean isThrusting = false;
     public boolean lastThrusting = false;
@@ -41,40 +46,59 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
 
     public final IFluidHandler combinedFluidHandler = new IFluidHandler() {
         @Override
-        public int getTanks() { return 2; }
+        public int getTanks() {
+            return 2;
+        }
+
         @Override
-        public @NotNull FluidStack getFluidInTank(int tank) { return tank == 0 ? tank1.getFluid() : tank2.getFluid(); }
+        public @NotNull FluidStack getFluidInTank(int tank) {
+            return tank == 0 ? tank1.getFluid() : tank2.getFluid();
+        }
+
         @Override
-        public int getTankCapacity(int tank) { return 1000; }
+        public int getTankCapacity(int tank) {
+            return 1000;
+        }
+
         @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) { return tank == 0 ? tank1.isFluidValid(stack) : tank2.isFluidValid(stack); }
+        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
+            return tank == 0 ? tank1.isFluidValid(stack) : tank2.isFluidValid(stack);
+        }
+
         @Override
         public int fill(FluidStack resource, FluidAction action) {
             int filled = tank1.fill(resource, action);
-            if (filled > 0) return filled;
+            if (filled > 0)
+                return filled;
             return tank2.fill(resource, action);
         }
+
         @Override
         public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
             FluidStack drained = tank1.drain(resource, action);
-            if (!drained.isEmpty()) return drained;
+            if (!drained.isEmpty())
+                return drained;
             return tank2.drain(resource, action);
         }
+
         @Override
         public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
             FluidStack drained = tank1.drain(maxDrain, action);
-            if (!drained.isEmpty()) return drained;
+            if (!drained.isEmpty())
+                return drained;
             return tank2.drain(maxDrain, action);
         }
     };
 
     public Direction getInput1(Direction facing) {
-        if (facing.getAxis() == Direction.Axis.Y) return Direction.EAST;
+        if (facing.getAxis() == Direction.Axis.Y)
+            return Direction.EAST;
         return facing.getClockWise();
     }
 
     public Direction getInput2(Direction facing) {
-        if (facing.getAxis() == Direction.Axis.Y) return Direction.WEST;
+        if (facing.getAxis() == Direction.Axis.Y)
+            return Direction.WEST;
         return facing.getCounterClockWise();
     }
 
@@ -85,15 +109,15 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
     }
 
     @Override
-    public void addBehaviours(List<com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour> behaviours) {
+    public void addBehaviours(
+            List<com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour> behaviours) {
         thrust = new ThrustBehaviour(this)
                 .withType(ThrustBehaviour.EngineType.ROCKET);
 
         thrustLimit = new ScrollValueBehaviour(
                 Component.translatable("gui.rocketnautics.max_thrust"),
                 this,
-                new ThrusterMountValueBox()
-        );
+                new ThrusterMountValueBox());
         thrustLimit.between(0, 200);
         thrustLimit.withFormatter(v -> (v * 50) + " N");
         thrustLimit.setValue(200);
@@ -103,14 +127,19 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
     }
 
     @Override
-    public com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour getThrustPower() { return thrustLimit; }
-    
+    public com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour getThrustPower() {
+        return thrustLimit;
+    }
+
     @Override
-    public boolean isActive() { return isThrusting; }
-    
+    public boolean isActive() {
+        return isThrusting;
+    }
+
     @Override
-    public void setActive(boolean active) {}
-    
+    public void setActive(boolean active) {
+    }
+
     @Override
     public void setThrottle(float throttle) {
         if (thrustLimit != null) {
@@ -118,15 +147,20 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
             thrustLimit.setValue((int) (throttle * targetMax));
         }
     }
-    
+
     @Override
-    public void setGimbal(double pitch, double yaw) {}
-    
+    public void setGimbal(double pitch, double yaw) {
+    }
+
     @Override
-    public float getFlow() { return isThrusting ? 1.0f : 0.0f; }
-    
+    public float getFlow() {
+        return isThrusting ? 1.0f : 0.0f;
+    }
+
     @Override
-    public String getPeripheralType() { return "modular_thruster"; }
+    public String getPeripheralType() {
+        return "modular_thruster";
+    }
 
     @Override
     public void remove() {
@@ -134,6 +168,7 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
     }
 
     private java.util.UUID uniqueId = java.util.UUID.randomUUID();
+
     @Override
     public java.util.UUID getUniqueId() {
         return uniqueId;
@@ -141,7 +176,7 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
 
     public float getThrustModifier() {
         float nozzleMod = nozzleType == 2 ? 1.3f : 1.0f;
-        return switch(pipeType) {
+        return switch (pipeType) {
             case 2 -> 2.0f * nozzleMod; // Full-flow
             case 3 -> 0.8f * nozzleMod; // Expander
             case 0 -> 1.0f * nozzleMod; // Closed
@@ -151,17 +186,17 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
 
     public float getEfficiencyModifier() {
         float nozzleMod = nozzleType == 2 ? 0.9f : 1.0f;
-        return switch(pipeType) {
+        return switch (pipeType) {
             case 2 -> 0.8f * nozzleMod; // Full-flow: Good
             case 3 -> 0.6f * nozzleMod; // Expander: Amazing
-            case 0 -> 1.0f * nozzleMod;  // Closed: Standard
+            case 0 -> 1.0f * nozzleMod; // Closed: Standard
             default -> 1.5f * nozzleMod; // Open: Poor
         };
     }
 
     public float getHeatModifier() {
         float nozzleMod = nozzleType == 2 ? 0.7f : 1.0f;
-        return switch(pipeType) {
+        return switch (pipeType) {
             case 2 -> 2.5f * nozzleMod; // Full-flow: Extreme
             case 1 -> 0.8f * nozzleMod; // Open: Low
             case 3 -> 0.5f * nozzleMod; // Expander: Very Low
@@ -170,7 +205,8 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ThrusterMountBlockEntity be) {
-        if (level == null) return;
+        if (level == null)
+            return;
 
         Direction facing = state.getValue(ThrusterMountBlock.FACING);
         Direction exhaustDir = facing.getOpposite();
@@ -193,18 +229,24 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
         }
 
         if (!level.isClientSide) {
-            Direction[] horizontalDirs = new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+            Direction[] horizontalDirs = new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST,
+                    Direction.WEST };
             for (Direction d : horizontalDirs) {
-                if (d.getAxis() == facing.getAxis()) continue;
+                if (d.getAxis() == facing.getAxis())
+                    continue;
                 BlockPos neighborPos = pos.relative(d);
                 if (level.getBlockEntity(neighborPos) instanceof ThrusterMountBlockEntity neighbor) {
                     if (neighbor.getBlockState().getValue(ThrusterMountBlock.FACING) == facing) {
                         FluidStack ourFluid1 = be.tank1.getFluid();
                         if (!ourFluid1.isEmpty()) {
                             FluidTank targetTank = null;
-                            if (neighbor.tank1.isEmpty() || neighbor.tank1.getFluid().getFluid().isSame(ourFluid1.getFluid())) targetTank = neighbor.tank1;
-                            else if (neighbor.tank2.isEmpty() || neighbor.tank2.getFluid().getFluid().isSame(ourFluid1.getFluid())) targetTank = neighbor.tank2;
-                            
+                            if (neighbor.tank1.isEmpty()
+                                    || neighbor.tank1.getFluid().getFluid().isSame(ourFluid1.getFluid()))
+                                targetTank = neighbor.tank1;
+                            else if (neighbor.tank2.isEmpty()
+                                    || neighbor.tank2.getFluid().getFluid().isSame(ourFluid1.getFluid()))
+                                targetTank = neighbor.tank2;
+
                             if (targetTank != null) {
                                 int total = be.tank1.getFluidAmount() + targetTank.getFluidAmount();
                                 int avg = total / 2;
@@ -218,9 +260,13 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
                         FluidStack ourFluid2 = be.tank2.getFluid();
                         if (!ourFluid2.isEmpty()) {
                             FluidTank targetTank = null;
-                            if (neighbor.tank1.isEmpty() || neighbor.tank1.getFluid().getFluid().isSame(ourFluid2.getFluid())) targetTank = neighbor.tank1;
-                            else if (neighbor.tank2.isEmpty() || neighbor.tank2.getFluid().getFluid().isSame(ourFluid2.getFluid())) targetTank = neighbor.tank2;
-                            
+                            if (neighbor.tank1.isEmpty()
+                                    || neighbor.tank1.getFluid().getFluid().isSame(ourFluid2.getFluid()))
+                                targetTank = neighbor.tank1;
+                            else if (neighbor.tank2.isEmpty()
+                                    || neighbor.tank2.getFluid().getFluid().isSame(ourFluid2.getFluid()))
+                                targetTank = neighbor.tank2;
+
                             if (targetTank != null) {
                                 int total = be.tank2.getFluidAmount() + targetTank.getFluidAmount();
                                 int avg = total / 2;
@@ -234,10 +280,14 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
                     }
                 }
             }
-            boolean tank1HasWater = be.tank1.getFluid().getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER);
-            boolean tank1HasLava = be.tank1.getFluid().getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA);
-            boolean tank2HasWater = be.tank2.getFluid().getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER);
-            boolean tank2HasLava = be.tank2.getFluid().getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA);
+            boolean tank1HasWater = be.tank1.getFluid().getFluid()
+                    .isSame(net.minecraft.world.level.material.Fluids.WATER);
+            boolean tank1HasLava = be.tank1.getFluid().getFluid()
+                    .isSame(net.minecraft.world.level.material.Fluids.LAVA);
+            boolean tank2HasWater = be.tank2.getFluid().getFluid()
+                    .isSame(net.minecraft.world.level.material.Fluids.WATER);
+            boolean tank2HasLava = be.tank2.getFluid().getFluid()
+                    .isSame(net.minecraft.world.level.material.Fluids.LAVA);
 
             int targetMax = (int) (200 * be.getThrustModifier());
             if (be.thrustLimit != null) {
@@ -246,16 +296,18 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
                 }
             }
 
-            boolean canThrust = be.hasPipes && be.nozzleType > 0 && be.thrustLimit != null && be.thrustLimit.getValue() > 0 &&
-                               ((tank1HasWater && tank2HasLava) || (tank1HasLava && tank2HasWater));
+            boolean canThrust = be.hasPipes && be.nozzleType > 0 && be.thrustLimit != null
+                    && be.thrustLimit.getValue() > 0 &&
+                    ((tank1HasWater && tank2HasLava) || (tank1HasLava && tank2HasWater));
 
             if (canThrust) {
-                float baseConsumption = 5.0f;
+                float baseConsumption = 200.0f;
                 float maxLimit = 200 * be.getThrustModifier();
                 float throttle = maxLimit > 0 ? (be.thrustLimit.getValue() / maxLimit) : 0f;
                 int consumption = (int) Math.ceil(baseConsumption * be.getEfficiencyModifier() * throttle);
-                if (consumption < 1) consumption = 1;
-                
+                if (consumption < 1)
+                    consumption = 1;
+
                 if (be.tank1.getFluidAmount() >= consumption && be.tank2.getFluidAmount() >= consumption) {
                     be.tank1.drain(consumption, IFluidHandler.FluidAction.EXECUTE);
                     be.tank2.drain(consumption, IFluidHandler.FluidAction.EXECUTE);
@@ -279,20 +331,18 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
         be.thrust.withOffset(new Vec3(0.5, 0.5, 0.5).add(
                 exhaustDir.getStepX() * 2.5,
                 exhaustDir.getStepY() * 2.5,
-                exhaustDir.getStepZ() * 2.5
-        ));
-        
+                exhaustDir.getStepZ() * 2.5));
+
         float force = 0.0f;
         if (be.isThrusting && be.thrustLimit != null) {
             force = be.thrustLimit.getValue() * 50.0f; // Each step is 50 N
         }
-        
+
         be.thrust.update(
                 force,
                 be.isThrusting ? 1.0f : 0.0f,
                 new Vec3(exhaustDir.getStepX(), exhaustDir.getStepY(), exhaustDir.getStepZ()),
-                be.isThrusting && be.nozzleType > 0
-        );
+                be.isThrusting && be.nozzleType > 0);
 
         be.tick();
     }
@@ -324,17 +374,23 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
         pipeType = tag.getInt("PipeType");
         nozzleType = tag.getInt("NozzleType");
         isThrusting = tag.getBoolean("IsThrusting");
-        if (tag.contains("Tank1")) tank1.readFromNBT(registries, tag.getCompound("Tank1"));
-        if (tag.contains("Tank2")) tank2.readFromNBT(registries, tag.getCompound("Tank2"));
+        if (tag.contains("Tank1"))
+            tank1.readFromNBT(registries, tag.getCompound("Tank1"));
+        if (tag.contains("Tank2"))
+            tank2.readFromNBT(registries, tag.getCompound("Tank2"));
     }
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        tooltip.add(Component.literal("    ").append(Component.translatable(getBlockState().getBlock().getDescriptionId()).withStyle(net.minecraft.ChatFormatting.GOLD)));
-        
+        tooltip.add(
+                Component.literal("    ").append(Component.translatable(getBlockState().getBlock().getDescriptionId())
+                        .withStyle(net.minecraft.ChatFormatting.GOLD)));
+
         if (nozzleType > 0) {
-            Component nozzleName = nozzleType == 1 ? Component.translatable("item.rocketnautics.copper_nozzle") : Component.translatable("item.rocketnautics.titanium_nozzle");
-            tooltip.add(Component.literal("  Nozzle: ").append(nozzleName.copy().withStyle(net.minecraft.ChatFormatting.GREEN)));
+            Component nozzleName = nozzleType == 1 ? Component.translatable("item.rocketnautics.copper_nozzle")
+                    : Component.translatable("item.rocketnautics.titanium_nozzle");
+            tooltip.add(Component.literal("  Nozzle: ")
+                    .append(nozzleName.copy().withStyle(net.minecraft.ChatFormatting.GREEN)));
         }
 
         if (hasPipes) {
@@ -344,21 +400,29 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
                 case 2 -> Component.translatable("gui.rocketnautics.cycle.fullflow");
                 default -> Component.translatable("gui.rocketnautics.cycle.expander");
             };
-            tooltip.add(Component.literal("  Cycle: ").append(cycle.copy().withStyle(net.minecraft.ChatFormatting.AQUA)));
+            tooltip.add(
+                    Component.literal("  Cycle: ").append(cycle.copy().withStyle(net.minecraft.ChatFormatting.AQUA)));
         }
 
         if (isThrusting) {
             float totalThrust = thrustLimit != null ? (thrustLimit.getValue() * 0.05f) : (10.0f * getThrustModifier());
-            tooltip.add(Component.literal("  Thrust: ").append(Component.literal(String.format("%.1f kN", totalThrust)).withStyle(net.minecraft.ChatFormatting.YELLOW)));
-            tooltip.add(Component.literal("  Efficiency: ").append(Component.literal(String.format("%.1f%%", 100.0f / getEfficiencyModifier())).withStyle(net.minecraft.ChatFormatting.AQUA)));
+            tooltip.add(Component.literal("  Thrust: ").append(Component.literal(String.format("%.1f kN", totalThrust))
+                    .withStyle(net.minecraft.ChatFormatting.YELLOW)));
+            tooltip.add(Component.literal("  Efficiency: ")
+                    .append(Component.literal(String.format("%.1f%%", 100.0f / getEfficiencyModifier()))
+                            .withStyle(net.minecraft.ChatFormatting.AQUA)));
         }
 
         if (nozzleType > 0 && level != null) {
             Direction facing = getBlockState().getValue(ThrusterMountBlock.FACING);
-            net.minecraft.world.level.block.entity.BlockEntity nozzleBe = level.getBlockEntity(worldPosition.relative(facing.getOpposite(), 2));
+            net.minecraft.world.level.block.entity.BlockEntity nozzleBe = level
+                    .getBlockEntity(worldPosition.relative(facing.getOpposite(), 2));
             if (nozzleBe instanceof EngineNozzleBlockEntity nozzle) {
                 if (nozzle.heat > 0.5f) {
-                    tooltip.add(Component.literal("  Temperature: ").append(Component.literal(String.format("%.0f°C", 200 + nozzle.heat * 800)).withStyle(nozzle.heat > 1.2f ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GOLD)));
+                    tooltip.add(Component.literal("  Temperature: ")
+                            .append(Component.literal(String.format("%.0f°C", 200 + nozzle.heat * 800))
+                                    .withStyle(nozzle.heat > 1.2f ? net.minecraft.ChatFormatting.RED
+                                            : net.minecraft.ChatFormatting.GOLD)));
                 }
             }
         }
@@ -366,29 +430,37 @@ public class ThrusterMountBlockEntity extends SmartBlockEntity implements IHaveG
         // Tank 1 info
         if (!tank1.getFluid().isEmpty()) {
             tooltip.add(Component.literal("  Tank 1: ")
-                .append(Component.literal(tank1.getFluid().getHoverName().getString() + " (" + tank1.getFluidAmount() + "/1000 mB)")
-                    .withStyle(net.minecraft.ChatFormatting.AQUA)));
+                    .append(Component
+                            .literal(tank1.getFluid().getHoverName().getString() + " (" + tank1.getFluidAmount()
+                                    + "/1000 mB)")
+                            .withStyle(net.minecraft.ChatFormatting.AQUA)));
         } else {
-            tooltip.add(Component.literal("  Tank 1: ").append(Component.literal("Empty").withStyle(net.minecraft.ChatFormatting.GRAY)));
+            tooltip.add(Component.literal("  Tank 1: ")
+                    .append(Component.literal("Empty").withStyle(net.minecraft.ChatFormatting.GRAY)));
         }
 
         // Tank 2 info
         if (!tank2.getFluid().isEmpty()) {
             tooltip.add(Component.literal("  Tank 2: ")
-                .append(Component.literal(tank2.getFluid().getHoverName().getString() + " (" + tank2.getFluidAmount() + "/1000 mB)")
-                    .withStyle(net.minecraft.ChatFormatting.AQUA)));
+                    .append(Component
+                            .literal(tank2.getFluid().getHoverName().getString() + " (" + tank2.getFluidAmount()
+                                    + "/1000 mB)")
+                            .withStyle(net.minecraft.ChatFormatting.AQUA)));
         } else {
-            tooltip.add(Component.literal("  Tank 2: ").append(Component.literal("Empty").withStyle(net.minecraft.ChatFormatting.GRAY)));
+            tooltip.add(Component.literal("  Tank 2: ")
+                    .append(Component.literal("Empty").withStyle(net.minecraft.ChatFormatting.GRAY)));
         }
 
         return true;
     }
 
-    public static class ThrusterMountValueBox extends com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform.Sided {
+    public static class ThrusterMountValueBox
+            extends com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform.Sided {
         @Override
         protected boolean isSideActive(BlockState state, Direction direction) {
             Direction facing = state.getValue(ThrusterMountBlock.FACING);
-            if (direction == facing || direction == facing.getOpposite()) return false;
+            if (direction == facing || direction == facing.getOpposite())
+                return false;
             Direction in1 = facing.getAxis() == Direction.Axis.Y ? Direction.EAST : facing.getClockWise();
             Direction in2 = in1.getOpposite();
             return direction != in1 && direction != in2;

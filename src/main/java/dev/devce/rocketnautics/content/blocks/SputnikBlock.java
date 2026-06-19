@@ -71,6 +71,17 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof SputnikBlockEntity sputnik) {
+                if (!level.isClientSide() && level.getServer() != null) {
+                    var radioMgr = dev.devce.rocketnautics.api.radio.RadioNetworkManager.getInstance(level.getServer());
+                    for (var node : sputnik.graph.getNodes()) {
+                        if (node.getTypeId().getPath().equals("radio")) {
+                            radioMgr.removeNode(node.getId());
+                        }
+                    }
+                }
+            }
             super.onRemove(state, level, pos, newState, isMoving);
         }
     }

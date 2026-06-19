@@ -181,6 +181,16 @@ public class RocketNautics {
     }
 
     @SubscribeEvent
+    public void onServerStarting(net.neoforged.neoforge.event.server.ServerStartingEvent event) {
+        dev.devce.rocketnautics.api.radio.RadioNetworkManager.setServer(event.getServer());
+    }
+
+    @SubscribeEvent
+    public void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
+        dev.devce.rocketnautics.api.radio.RadioNetworkManager.setServer(null);
+    }
+
+    @SubscribeEvent
     public void onLevelTick(LevelTickEvent.Post event) {
     }
 
