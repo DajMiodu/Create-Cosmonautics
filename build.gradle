@@ -55,7 +55,7 @@ repositories {
     }
 }
 
-version = '1.3.8rc8'
+version = '1.4.0rc1'
 group = 'dev.devce.rocketnautics'
 
 base {
@@ -112,8 +112,6 @@ dependencies {
     implementation("dev.simulated_team.simulated:simulated-neoforge-${minecraft_version}:${simulated_version}") { transitive = false }
     implementation("dev.eriksonn.aeronautics:aeronautics-neoforge-${minecraft_version}:${aeronautics_version}") { transitive = false }
     implementation("foundry.veil:veil-neoforge-${minecraft_version}:4.1.1")
-
-    implementation("maven.modrinth:dimensional-sable:1.0.4")
     
     compileOnly("mezz.jei:jei-1.21.1-common-api:${jei_version}")
     compileOnly("mezz.jei:jei-1.21.1-neoforge-api:${jei_version}")

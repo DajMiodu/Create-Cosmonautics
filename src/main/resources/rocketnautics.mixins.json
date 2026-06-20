@@ -15,7 +15,13 @@
     "LivingEntityMixin",
     "RemainingAirOverlayMixin",
     "SubLevelPhysicsSystemMixin",
-    "SubLevelWarperMixin"
+    "SubLevelWarperMixin",
+    "RapierPhysicsPipelineMixin",
+    "PhysicsPipelineMixin",
+    "RapierFixedConstraintHandleMixin",
+    "RapierFreeConstraintHandleMixin",
+    "RapierGenericConstraintHandleMixin",
+    "RapierRotaryConstraintHandleMixin"
   ],
   "client": [
     "ClientLevelMixin",
