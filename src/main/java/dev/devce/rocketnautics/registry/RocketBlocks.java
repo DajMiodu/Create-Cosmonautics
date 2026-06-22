@@ -7,6 +7,7 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.recipe.CommonMetal;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.ItemBuilder;
+import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
 import com.tterrag.registrate.util.DataIngredient;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
@@ -15,10 +16,13 @@ import dev.devce.rocketnautics.RocketSpriteShifts;
 import dev.devce.rocketnautics.content.RocketBlockItem;
 import dev.devce.rocketnautics.content.blocks.*;
 import dev.devce.rocketnautics.content.blocks.hose.HoseAnchorBlock;
+import dev.devce.rocketnautics.content.blocks.separator.SeparatorBlock;
+import dev.devce.rocketnautics.content.blocks.separator.SeparatorChargeBlock;
+import dev.devce.rocketnautics.content.blocks.separator.SeparatorShaftBlock;
 import dev.devce.rocketnautics.content.blocks.world.MossBlock;
 import dev.devce.rocketnautics.content.blocks.world.RockBlock;
-import dev.simulated_team.simulated.index.SimTags;
 import dev.simulated_team.simulated.registrate.SimulatedRegistrate;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -32,13 +36,17 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
+import net.neoforged.neoforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.neoforged.neoforge.common.Tags;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
@@ -129,10 +137,75 @@ public class RocketBlocks {
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(pickaxeOnly())
-            .transform(existingDirectionalModel("sep"))
+            .blockstate((ctx, prov) -> allDirectionsMultiPart(prov, prov.getMultipartBuilder(ctx.getEntry()), SeparatorBlock.FACING, "separator")
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.NORTH), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Z)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.SOUTH), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Z)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.EAST), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.X)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.WEST), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.X)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.UP), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Y)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.DOWN), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Y)).end()
+            )
             .tag(RocketTags.BlockTags.SUPER_LIGHT.tag)
             .item(RocketBlockItem::new)
-            .model((ctx, prov) -> prov.blockItem(ctx::getEntry, "_single"))
+            .model((ctx, prov) -> prov.blockItem(ctx::getEntry))
+            .build().register();
+
+    public static final BlockEntry<SeparatorChargeBlock> SEPARATOR_CHARGE = REGISTRATE.block("separator_charge", SeparatorChargeBlock::new)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .blockstate((ctx, prov) -> allDirectionsMultiPart(prov, prov.getMultipartBuilder(ctx.getEntry()), SeparatorChargeBlock.FACING, "separator_charge")
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.NORTH), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.Z)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.SOUTH), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.Z)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.EAST), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.X)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.WEST), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.X)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.UP), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.Y)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorChargeBlock.LINKS.get(Direction.DOWN), true).condition(SeparatorChargeBlock.FACING, allBut(Direction.Axis.Y)).end()
+            )
+            .tag(RocketTags.BlockTags.SUPER_LIGHT.tag)
+            .item(RocketBlockItem::new)
+            .model((ctx, prov) -> prov.blockItem(ctx::getEntry))
+            .build().register();
+
+    public static final BlockEntry<SeparatorShaftBlock> SEPARATOR_SHAFT = REGISTRATE.block("separator_shaft", SeparatorShaftBlock::new)
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .properties(BlockBehaviour.Properties::noOcclusion)
+            .transform(pickaxeOnly())
+            .blockstate((ctx, prov) -> allDirectionsMultiPart(prov, prov.getMultipartBuilder(ctx.getEntry()), SeparatorBlock.FACING, "separator_shaft")
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.NORTH), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Z)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.SOUTH), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Z)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.EAST), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.X)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.WEST), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.X)).end()
+
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_a"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.UP), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Y)).end()
+                    .part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/separator_link_b"))).rotationY(90).rotationX(-90).addModel()
+                    .condition(SeparatorBlock.LINKS.get(Direction.DOWN), true).condition(SeparatorBlock.FACING, allBut(Direction.Axis.Y)).end()
+            )
+            .tag(RocketTags.BlockTags.LIGHT.tag)
+            .item(RocketBlockItem::new)
+            .model((ctx, prov) -> prov.blockItem(ctx::getEntry, "_item"))
             .build().register();
 
     public static final BlockEntry<SputnikBlock> SPUTNIK = REGISTRATE.block("sputnik", SputnikBlock::new)
@@ -480,4 +553,21 @@ public class RocketBlocks {
                 .blockstate((ctx, prov) -> prov.slabBlock(ctx.getEntry(), RocketNautics.path("block/" + parent.getKey().location().getPath()), RocketNautics.path("block/" + parent.getKey().location().getPath() + sideSuffix), RocketNautics.path("block/" + parent.getKey().location().getPath() + topSuffix), RocketNautics.path("block/" + parent.getKey().location().getPath() + topSuffix)));
     }
 
+    private static MultiPartBlockStateBuilder allDirectionsMultiPart(RegistrateBlockstateProvider prov, MultiPartBlockStateBuilder builder, DirectionProperty prop, String path) {
+        for (Direction dir : Direction.values()) {
+            directionalMultiPart(prov, builder, prop, dir, path);
+        }
+        return builder;
+    }
+
+    private static MultiPartBlockStateBuilder directionalMultiPart(RegistrateBlockstateProvider prov, MultiPartBlockStateBuilder builder, DirectionProperty prop, Direction dir, String path) {
+        return builder.part().modelFile(prov.models().getExistingFile(RocketNautics.path("block/" + path)))
+                .rotationX(dir == Direction.DOWN ? 180 : dir.getAxis().isHorizontal() ? 90 : 0)
+                .rotationY(dir.getAxis().isVertical() ? 0 : (((int) dir.toYRot()) + 180) % 360)
+                .addModel().condition(prop, dir).end();
+    }
+
+    private static Direction[] allBut(Direction.Axis axis) {
+        return Arrays.stream(Direction.values()).filter(d -> !axis.test(d)).toArray(Direction[]::new);
+    }
 }
