@@ -2,17 +2,17 @@
 --@category Math
 --@output   Out
 
--- Инициализируем текстовое поле один раз и сохраняем в глобальное окружение ноды
+-- Initialize the text field once and store it in the node's global environment
 if _G.tf == nil then
     _G.tf = ui.textfield(60)
     _G.tf.setValue("0")
 end
 
--- Добавляем элемент на ноду (безопасно вызывать каждый тик)
+-- Add the element to the node (safe to call every tick)
 addElement(_G.tf)
 
--- Читаем значение из поля и конвертируем в число
+-- Read the value from the field and convert it to a number
 local val = tonumber(_G.tf.getValue()) or 0
 
--- Выводим
+-- Output the value
 output("Out", val)
