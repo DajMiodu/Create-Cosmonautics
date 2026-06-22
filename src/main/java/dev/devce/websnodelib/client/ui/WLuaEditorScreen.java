@@ -77,6 +77,13 @@ public class WLuaEditorScreen extends Screen {
             graphics.drawString(font, consoleLines.get(i), 10, conY + 5 + i * 10, 0xFFAAAAAA, false);
         }
 
+        // Run Button
+        int runBtnX = width - 60;
+        int runBtnY = 5;
+        boolean hoverRun = mouseX >= runBtnX && mouseX <= runBtnX + 50 && mouseY >= runBtnY && mouseY <= runBtnY + 15;
+        graphics.fill(runBtnX, runBtnY, runBtnX + 50, runBtnY + 15, hoverRun ? 0xFF00FF88 : 0xFF252525);
+        graphics.drawString(font, "Run (►)", runBtnX + 5, runBtnY + 4, hoverRun ? 0xFF000000 : 0xFF00FF88, false);
+
         // Clickable Breadcrumbs
         renderBreadcrumbs(graphics);
     }
@@ -133,6 +140,28 @@ public class WLuaEditorScreen extends Screen {
                     return true;
                 }
                 bcX += w + font.width(" / ");
+            }
+        }
+
+        if (button == 0) {
+            int runBtnX = width - 60;
+            int runBtnY = 5;
+            if (mouseX >= runBtnX && mouseX <= runBtnX + 50 && mouseY >= runBtnY && mouseY <= runBtnY + 15) {
+                // Save code
+                node.getCustomData().putString("code", codeArea.getValue());
+                // Force evaluator to reload and run
+                node.evaluate();
+                
+                // Check errors
+                boolean hasErr = node.getCustomData().getBoolean("err") || node.getCustomData().getBoolean("failed");
+                String errMsg = node.getCustomData().getString("errMsg");
+                
+                if (hasErr) {
+                    log("§c[Error] " + (errMsg.isEmpty() ? "Compilation failed" : errMsg));
+                } else {
+                    log("§a[Success] Evaluated successfully.");
+                }
+                return true;
             }
         }
 

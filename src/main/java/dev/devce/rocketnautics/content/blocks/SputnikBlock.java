@@ -33,7 +33,10 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.literal("someone said this \"black pokeball block\"").withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltip.add(Component.literal("The brain of your spacecraft.").withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltip.add(Component.literal("Runs a Lua node graph every tick — read sensors,").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal("control thrusters, send radio packets and more.").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal("Right-click to open the node editor.").withStyle(net.minecraft.ChatFormatting.AQUA));
     }
 
     @Override

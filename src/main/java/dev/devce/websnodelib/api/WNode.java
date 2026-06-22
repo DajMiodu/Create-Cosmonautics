@@ -168,8 +168,10 @@ public class WNode {
         
         // Title Bar
         boolean isFailed = getCustomData().getBoolean("err") || getCustomData().getBoolean("failed");
-        graphics.fill(x, y, x + width, y + 15, isFailed ? 0xAAFF0000 : 0x44000000);
-        int headerCol = isFailed ? 0xFFFF0000 : 0xFF00FF88;
+        int headerCol = isFailed ? 0xFFFF0000 : (getCustomData().contains("categoryColor") ? getCustomData().getInt("categoryColor") : 0xFF00FF88);
+        int headerBgCol = isFailed ? 0xAAFF0000 : (headerCol & 0x44FFFFFF);
+        
+        graphics.fill(x, y, x + width, y + 15, headerBgCol);
         graphics.fill(x, y + 14, x + width, y + 15, headerCol);
         
         // Border
@@ -181,7 +183,7 @@ public class WNode {
         }
         
         if (!net.neoforged.fml.loading.FMLEnvironment.dist.isDedicatedServer()) {
-            graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, title, x + 5, y + 3, isFailed ? 0xFFFF5555 : 0xFF00FF88, false);
+            graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, title, x + 5, y + 3, isFailed ? 0xFFFF5555 : headerCol, false);
         }
 
         int maxInputLabelWidth = 0;

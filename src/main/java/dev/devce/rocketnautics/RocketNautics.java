@@ -86,6 +86,8 @@ public class RocketNautics {
         RocketSounds.register(modEventBus);
         InternalNodes.register();
         dev.devce.rocketnautics.registry.RocketNodes.register();
+        // Load data-driven nodes from jar resources + gamedir/nodes/ folder
+        dev.devce.rocketnautics.registry.NodeDefinitionLoader.load();
 
         RocketDataComponents.register(modEventBus);
 
@@ -149,6 +151,7 @@ public class RocketNautics {
         dev.devce.rocketnautics.content.commands.AsteroidCommand.register(event.getDispatcher());
         dev.devce.rocketnautics.content.commands.BreakBarrierCommand.register(event.getDispatcher());
         TimescaleCommand.register(event.getDispatcher());
+        dev.devce.rocketnautics.content.commands.NodesReloadCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent
@@ -192,6 +195,11 @@ public class RocketNautics {
 
     @SubscribeEvent
     public void onLevelTick(LevelTickEvent.Post event) {
+        // Tick LinkedSignalHandler once per server tick to avoid duplication
+        // when multiple Sputnik blocks exist on the same level.
+        if (!event.getLevel().isClientSide()) {
+            dev.devce.rocketnautics.content.blocks.LinkedSignalHandler.tick(event.getLevel());
+        }
     }
 
     @SubscribeEvent

@@ -1,17 +1,26 @@
 package dev.devce.rocketnautics.content.blocks;
 
-import dev.devce.rocketnautics.api.peripherals.IPeripheral;
+import dev.devce.rocketnautics.api.orbit.AtmosphereFlags;
+import dev.devce.rocketnautics.content.orbit.DeepSpaceData;
+import dev.devce.rocketnautics.content.orbit.DeepSpaceInstance;
+import dev.devce.rocketnautics.content.orbit.universe.CubePlanet;
+import dev.devce.rocketnautics.content.orbit.universe.PointGravitySource;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.joml.Vector3d;
 import dev.devce.websnodelib.api.WGraph;
+
+import java.util.EnumSet;
+import java.util.StringJoiner;
 
 /**
  * Sputnik Block Entity acts as the core central computer of a spacecraft.
@@ -56,7 +65,8 @@ public class SputnikBlockEntity extends BlockEntity {
     }
 
     private void tickNodes() {
-        dev.devce.rocketnautics.content.blocks.LinkedSignalHandler.tick(level);
+        // NOTE: LinkedSignalHandler.tick() is called once per server tick from
+        // RocketNautics.onLevelTick() to avoid double-ticking when multiple Sputniks exist.
         graph.tick();
     }
 
@@ -188,23 +198,167 @@ public class SputnikBlockEntity extends BlockEntity {
     }
 
     public String getGlobalBiomeName() {
-        var subLevel = dev.ryanhcode.sable.Sable.HELPER.getContaining(level, worldPosition);
-        if (subLevel != null && !level.isClientSide) {
-            if (this.level.getServer() != null) {
-                for (var sl : this.level.getServer().getAllLevels()) {
-                    var container = dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(sl);
-                    if (container != null) {
-                        for (var slItem : container.getAllSubLevels()) {
-                            if (slItem.getUniqueId().equals(subLevel.getUniqueId())) {
-                                Vector3d global = getGlobalPos();
-                                return sl.getBiome(BlockPos.containing(global.x, 64, global.z)).getRegisteredName();
-                            }
-                        }
-                    }
-                }
-            }
+        Biome b = getGlobalBiome();
+        return b != null ? level.getBiome(worldPosition).getRegisteredName() : getBiomeName();
+    }
+
+    // -----------------------------------------------------------------------
+    // New World Telemetry
+    // -----------------------------------------------------------------------
+
+    public int getLightLevel() {
+        if (level == null) return 0;
+        return level.getMaxLocalRawBrightness(worldPosition);
+    }
+
+    public float getTemperature() {
+        if (level == null) return 0f;
+        return level.getBiome(worldPosition).value().getBaseTemperature();
+    }
+
+    public String getDimensionId() {
+        if (level == null) return "unknown";
+        return level.dimension().location().toString();
+    }
+
+    public long getWorldTime() {
+        if (level == null) return 0L;
+        return level.getDayTime();
+    }
+
+    public double getSpeed() {
+        return getVelocityVector().length();
+    }
+
+    // -----------------------------------------------------------------------
+    // DeepSpace API helpers
+    // -----------------------------------------------------------------------
+
+    /** Returns the DeepSpaceInstance this sputnik is part of, or null. */
+    public DeepSpaceInstance getDeepSpaceInstance() {
+        if (level == null || level.isClientSide() || level.getServer() == null) return null;
+        DeepSpaceData data = DeepSpaceData.getInstance(level.getServer());
+        Vector3d pos = getGlobalPos();
+        return data.getInstanceForPos((int) pos.x, (int) pos.z);
+    }
+
+    /** Orbital semi-major axis in metres, or NaN if not in DeepSpace. */
+    public double getOrbitalSemiMajorAxis() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return Double.NaN;
+        return inst.getPosition().getCurrentOrbit().getA();
+    }
+
+    /** Orbital eccentricity (0 = circular). */
+    public double getOrbitalEccentricity() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return Double.NaN;
+        return inst.getPosition().getCurrentOrbit().getE();
+    }
+
+    /** Orbital inclination in degrees. */
+    public double getOrbitalInclination() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return Double.NaN;
+        return Math.toDegrees(inst.getPosition().getCurrentOrbit().getI());
+    }
+
+    /** Orbital period in seconds, or NaN if orbit is hyperbolic. */
+    public double getOrbitalPeriod() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return Double.NaN;
+        try { return inst.getPosition().getCurrentOrbit().getKeplerianPeriod(); }
+        catch (Exception e) { return Double.NaN; }
+    }
+
+    /** Current orbital speed in m/s. */
+    public double getOrbitalSpeed() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return 0;
+        return inst.getPosition().getCurrentPVCoords().getVelocity().getNorm();
+    }
+
+    /** Gravitational acceleration at current position (m/s²). */
+    public double getGravityAcceleration() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return 0;
+        double mu = inst.getPosition().getCurrentOrbit().getMu();
+        double r = inst.getPosition().getCurrentPosition().getNorm();
+        if (r < 1) return 0;
+        return mu / (r * r);
+    }
+
+    /** Name of the current orbital frame (parent body). */
+    public String getParentBodyName() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return getDimensionId();
+        return inst.getPosition().getFrame().getName();
+    }
+
+    /** Radius of the parent body in metres, or 0 if unknown. */
+    public double getParentBodyRadius() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted() || level == null || level.getServer() == null) return 0;
+        DeepSpaceData data = DeepSpaceData.getInstance(level.getServer());
+        String frameName = inst.getPosition().getFrame().getName();
+        return data.getUniverse().getPlanets().stream()
+                .filter(p -> p.orekitFrame().getName().equals(frameName))
+                .mapToDouble(CubePlanet::radius)
+                .findFirst().orElse(0);
+    }
+
+    /** Distance from current position to the nearest planet surface in metres. */
+    public double getDistanceToPlanet() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted()) return Double.NaN;
+        double r = inst.getPosition().getCurrentPosition().getNorm();
+        double radius = getParentBodyRadius();
+        return Math.max(0, r - radius);
+    }
+
+    /** Returns true if the sputnik is within the transition height of the nearest planet's atmosphere. */
+    public boolean isInAtmosphere() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted() || level == null || level.getServer() == null) return false;
+        DeepSpaceData data = DeepSpaceData.getInstance(level.getServer());
+        CubePlanet orbiting = null;
+        String frameName = inst.getPosition().getFrame().getName();
+        for (CubePlanet p : data.getUniverse().getPlanets()) {
+            if (p.orekitFrame().getName().equals(frameName)) { orbiting = p; break; }
         }
-        return getBiomeName();
+        if (orbiting == null || orbiting.linkedDimension() == null) return false;
+        double dist = getDistanceToPlanet();
+        return dist <= orbiting.linkedDimension().transitionHeight();
+    }
+
+    /** Comma-separated AtmosphereFlags at current altitude, or empty string. */
+    public String getAtmosphereFlags() {
+        DeepSpaceInstance inst = getDeepSpaceInstance();
+        if (inst == null || inst.isCorrupted() || level == null || level.getServer() == null) return "";
+        DeepSpaceData data = DeepSpaceData.getInstance(level.getServer());
+        CubePlanet orbiting = null;
+        String frameName = inst.getPosition().getFrame().getName();
+        for (CubePlanet p : data.getUniverse().getPlanets()) {
+            if (p.orekitFrame().getName().equals(frameName)) { orbiting = p; break; }
+        }
+        if (orbiting == null || orbiting.linkedDimension() == null) return "";
+        double dist = getDistanceToPlanet();
+        // Find the altitude band that contains our altitude
+        var atmosphere = orbiting.linkedDimension().atmosphere();
+        EnumSet<AtmosphereFlags> flags = null;
+        for (var entry : atmosphere.int2ObjectEntrySet()) {
+            if (dist <= entry.getIntKey()) { flags = entry.getValue(); break; }
+        }
+        if (flags == null || flags.isEmpty()) return "";
+        StringJoiner sj = new StringJoiner(",");
+        for (AtmosphereFlags f : flags) sj.add(f.getSerializedName());
+        return sj.toString();
+    }
+
+    /** Universe tick count from DeepSpaceData. */
+    public long getUniverseTime() {
+        if (level == null || level.isClientSide() || level.getServer() == null) return 0L;
+        return DeepSpaceData.getInstance(level.getServer()).getUniverseTicks();
     }
 
     @Override
