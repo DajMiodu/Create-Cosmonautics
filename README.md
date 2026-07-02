@@ -4,9 +4,11 @@
 
 # Create: Cosmonautics
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![NeoForge](https://img.shields.io/badge/NeoForge-21.1+-orange.svg)](https://neoforged.net/)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-blue.svg)](https://www.minecraft.net/)
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/micg1iTH?style=for-the-badge&logo=modrinth)](https://modrinth.com/projects/micg1iTH)
+[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1595491?style=for-the-badge&logo=curseforge)](https://www.curseforge.com/projects/1595491)
+[![Discord](https://img.shields.io/discord/1497765551781580820?style=for-the-badge&logo=discord&color=5865F2)](https://discord.gg/FTuSNWsyAj)
+[![NeoForge](https://img.shields.io/badge/NeoForge-21.1+-orange.svg?style=for-the-badge)](https://neoforged.net/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 **Create: Cosmonautics** is a high-fidelity industrial-aerospace expansion for the **Create** mod. It enables the construction of physics-driven launch vehicles, orbital stations, and interstellar exploration systems.
 
