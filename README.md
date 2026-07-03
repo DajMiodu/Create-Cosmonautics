@@ -28,6 +28,8 @@ Featuring dynamic rigid body physics, the mod integrates mechanics such as thrus
 
 Fulfill your childhood dream of becoming an astronaut. Build your own rocket and fly it up into the sky, discover what secrets does space have, land on the moon, as well as explore different planets.
 
+---
+
 ### Engineering the Cosmos
 *   **Localized orbital mechanics:** Match velocities, align your spacecrafts and flawlessly dock them.
 *   **Dashboard:** Read your current position and trajectory via the holographic table.
@@ -37,8 +39,6 @@ Fulfill your childhood dream of becoming an astronaut. Build your own rocket and
 ### Compatibility for addons
 *   **Different fuels:** Use mods like TFMG or Create Diesel Generators to improve fuel efficiency.
 *   **Data-driven universe:** Easily add new planets or celestial bodies via a datapack. [Wiki](WikiPage)
-
----
 
 ## Technical Specifications and Requirements
 
