@@ -4,21 +4,23 @@
 
 # Create: Cosmonautics
 
-<a href="https://modrinth.com/projects/micg1iTH" target="_blank">
-  <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg">
-</a>
+<p align="center">
+  <a href="https://modrinth.com/projects/micg1iTH" target="_blank">
+    <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg">
+  </a>
 
-<a href="https://www.curseforge.com/projects/1595491" target="_blank">
-  <img alt="curseforge" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/curseforge_vector.svg">
-</a>
+  <a href="https://www.curseforge.com/projects/1595491" target="_blank">
+    <img alt="curseforge" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/curseforge_vector.svg">
+  </a>
 
-<a href="https://discord.gg/FTuSNWsyAj" target="_blank">
-  <img alt="discord-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg">
-</a>
+  <a href="https://discord.gg/FTuSNWsyAj" target="_blank">
+    <img alt="discord-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg">
+  </a>
 
-<a href="https://github.com/CosmonauticsTeam/Create-Cosmonautics" target="_blank">
-  <img alt="github-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/github-plural_vector.svg">
-</a>
+  <a href="https://github.com/CosmonauticsTeam/Create-Cosmonautics" target="_blank">
+    <img alt="github-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/github-plural_vector.svg">
+  </a>
+</p>
 
 **Create: Cosmonautics** is a high-fidelity industrial-aerospace expansion for the **Create** mod. It enables the construction of physics-driven launch vehicles, orbital stations, and interstellar exploration systems.
 
