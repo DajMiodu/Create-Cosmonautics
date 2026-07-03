@@ -5,15 +5,15 @@
 # Create: Cosmonautics
 
 <p align="center">
-  <a href="https://modrinth.com/projects/micg1iTH" target="_blank">
+  <a href="https://modrinth.com/projects/micg1iTH" target="_blank" rel="nofollow">
     <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg">
   </a>
 
-  <a href="https://www.curseforge.com/projects/1595491" target="_blank">
+  <a href="https://www.curseforge.com/projects/1595491" target="_blank" rel="nofollow">
     <img alt="curseforge" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/curseforge_vector.svg">
   </a>
 
-  <a href="https://discord.gg/FTuSNWsyAj" target="_blank">
+  <a href="https://discord.gg/FTuSNWsyAj" target="_blank" rel="nofollow">
     <img alt="discord-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg">
   </a>
 
