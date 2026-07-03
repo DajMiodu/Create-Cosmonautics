@@ -31,7 +31,7 @@ Fulfill your childhood dream of becoming an astronaut. Build your own rocket and
 ---
 
 ### Engineering the Cosmos
-*   **Localized orbital mechanics:** Match velocities, align your spacecrafts and flawlessly dock them.
+*   **Realistic orbital mechanics:** Work with space rendezvous, proper transfer windows and correctly executed manuevers.
 *   **Dashboard:** Read your current position and trajectory via the holographic table.
 *   **Time warping:** Travel through space with quickness and ease.
 *   **Exploration:** Visit different moons or planets present in your solar system or outside it.
