@@ -33,7 +33,7 @@ Fulfill your childhood dream of becoming an astronaut. Build your own rocket and
 ### Engineering the Cosmos
 *   **Localized orbital mechanics:** Match velocities, align your spacecrafts and flawlessly dock them.
 *   **Dashboard:** Read your current position and trajectory via the holographic table.
-*   **Time warping:** Travel in space with ease using time warp.
+*   **Time warping:** Travel through space with quickness and ease.
 *   **Exploration:** Visit different moons or planets present in your solar system or outside it.
 
 ### Compatibility for addons
