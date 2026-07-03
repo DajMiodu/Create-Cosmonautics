@@ -4,11 +4,21 @@
 
 # Create: Cosmonautics
 
-[![Modrinth Downloads](https://img.shields.io/modrinth/dt/micg1iTH?style=for-the-badge&logo=modrinth)](https://modrinth.com/projects/micg1iTH)
-[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1595491?style=for-the-badge&logo=curseforge)](https://www.curseforge.com/projects/1595491)
-[![Discord](https://img.shields.io/discord/1497765551781580820?style=for-the-badge&logo=discord&color=5865F2)](https://discord.gg/FTuSNWsyAj)
-[![NeoForge](https://img.shields.io/badge/NeoForge-21.1+-orange.svg?style=for-the-badge)](https://neoforged.net/)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
+<a href="https://modrinth.com/projects/micg1iTH" target="_blank">
+  <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg">
+</a>
+
+<a href="https://www.curseforge.com/projects/1595491" target="_blank">
+  <img alt="curseforge" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/curseforge_vector.svg">
+</a>
+
+<a href="https://discord.gg/FTuSNWsyAj" target="_blank">
+  <img alt="discord-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg">
+</a>
+
+<a href="https://github.com/CosmonauticsTeam/Create-Cosmonautics" target="_blank">
+  <img alt="github-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/github-plural_vector.svg">
+</a>
 
 **Create: Cosmonautics** is a high-fidelity industrial-aerospace expansion for the **Create** mod. It enables the construction of physics-driven launch vehicles, orbital stations, and interstellar exploration systems.
 
@@ -43,7 +53,7 @@ The mod features various engine types with unique performance characteristics:
 ## Technical Specifications and Requirements
 
 ### Dependencies
-*   **Java 21**
+*   **Java 21** (Zulu is recommended)
 *   **NeoForge** 21.1.228+
 *   **Create** 0.6+ (for Minecraft 1.21.1)
 *   **Sable API** (Core physics backend)
