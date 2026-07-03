@@ -5,15 +5,15 @@
 # Create: Cosmonautics
 
 <p align="center">
-  <a href="https://modrinth.com/projects/micg1iTH" target="_blank" rel="nofollow">
+  <a href="https://modrinth.com/projects/micg1iTH" target="_blank">
     <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg">
   </a>
 
-  <a href="https://www.curseforge.com/projects/1595491" target="_blank" rel="nofollow">
+  <a href="https://www.curseforge.com/projects/1595491" target="_blank">
     <img alt="curseforge" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/curseforge_vector.svg">
   </a>
 
-  <a href="https://discord.gg/FTuSNWsyAj" target="_blank" rel="nofollow">
+  <a href="https://discord.gg/FTuSNWsyAj" target="_blank">
     <img alt="discord-plural" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg">
   </a>
 
@@ -22,9 +22,22 @@
   </a>
 </p>
 
-**Create: Cosmonautics** is a high-fidelity industrial-aerospace expansion for the **Create** mod. It enables the construction of physics-driven launch vehicles, orbital stations, and interstellar exploration systems.
+**Create: Cosmonautics** is a high-fidelity industrial-aerospace expansion for the **Create Aeronautics** mod. It enables the construction of physics-driven launch vehicles, orbital stations, and interstellar exploration systems.
 
 Featuring dynamic rigid body physics, the mod integrates mechanics such as thrust-to-weight ratios, center of mass alignment, and atmospheric drag, providing an immersive aerospace experience within the Minecraft ecosystem.
+
+Fulfill your childhood dream of becoming an astronaut. Build your own rocket and fly it up into the sky, discover what secrets does space have, land on the moon, as well as explore different planets.
+
+---
+
+### Engineering the Cosmos
+*   **True orbital mechanics:** Match velocities, align your spacecrafts and flawlessly dock them.
+*   **Dashboard:** Read your current position and trajectory via the table.
+*   **Exploration:** Visit different moons or planets present in your solar system or outside it.
+
+### Compatibility for addons
+*   **Different fuels:** Use mods like TFMG or Create Diesel Generators to improve fuel efficiency.
+*   **Data-driven universe:** Easily add new planets or celestial bodies via a datapack. [Wiki](WikiPage)
 
 ---
 
@@ -32,8 +45,9 @@ Featuring dynamic rigid body physics, the mod integrates mechanics such as thrus
 
 ### Dependencies
 *   **Java 21** (Zulu is recommended)
-*   **NeoForge** 21.1.228+
-*   **Create** 0.6+ (for Minecraft 1.21.1)
+*   **NeoForge** 21.1.234+
+*   **Create** 0.6.10+ (For Minecraft 1.21.1)
+*   **Create Aeronautics** (Base mod of Cosmonautics)
 *   **Sable API** (Core physics backend)
 
 ### Setup for Developers
