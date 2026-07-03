@@ -44,7 +44,7 @@ Fulfill your childhood dream of becoming an astronaut. Build your own rocket and
 ## Technical Specifications and Requirements
 
 ### Dependencies
-*   **Java 21** (Zulu is recommended)
+*   **Java 21**
 *   **NeoForge** 21.1.234+
 *   **Create** 0.6.10+ (For Minecraft 1.21.1)
 *   **Create Aeronautics** (Base mod of Cosmonautics)
