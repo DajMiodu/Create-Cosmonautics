@@ -96,7 +96,7 @@ public class GlobalSpacePhysicsHandler {
             for (SubLevel subLevel : container.getAllSubLevels()) {
                 if (subLevel instanceof ServerSubLevel serverSubLevel) {
                     RigidBodyHandle handle = physicsSystem.getPhysicsHandle(serverSubLevel);
-                    if (handle != null) {
+                    if (handle != null && handle.isValid()) {
                         processSubLevelPhysics(serverSubLevel, handle, level, timeStep);
                     }
                 }
@@ -413,7 +413,9 @@ public class GlobalSpacePhysicsHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onFallDamage(LivingFallEvent event) {
-        if (DeepSpaceHelper.getDataForDimension(event.getEntity().level()).map(PlanetDimensionData::applyGravityCorrectionToEntities).orElse(false)) {
+        if (DeepSpaceHelper.isDeepSpace(event.getEntity().level())) {
+            event.setCanceled(true);
+        } else if (DeepSpaceHelper.getDataForDimension(event.getEntity().level()).map(PlanetDimensionData::applyGravityCorrectionToEntities).orElse(false)) {
             double gravity = DimensionPhysicsData.getGravity(event.getEntity().level()).y();
             double normalGravity = -11f;
             event.setDistance((float) (event.getDistance() * gravity / normalGravity));
