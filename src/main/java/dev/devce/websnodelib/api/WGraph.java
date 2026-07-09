@@ -106,6 +106,14 @@ public class WGraph {
      * @param targetPin Index of the input pin.
      */
     public void connect(UUID sourceNode, int sourcePin, UUID targetNode, int targetPin) {
+        WNode source = findNode(sourceNode);
+        WNode target = findNode(targetNode);
+        if (source == null || target == null) return;
+        if (sourcePin < 0 || sourcePin >= source.getOutputs().size()) return;
+        if (targetPin < 0 || targetPin >= target.getInputs().size()) return;
+        WPin output = source.getOutputs().get(sourcePin);
+        WPin input = target.getInputs().get(targetPin);
+        if (!input.getValueType().accepts(output.getValueType())) return;
         connections.add(new WConnection(sourceNode, sourcePin, targetNode, targetPin));
         updateTopology();
     }
@@ -150,10 +158,13 @@ public class WGraph {
             if (source != null && target != null) {
                 // Bounds checks to prevent crashes if pins were dynamically changed
                 if (conn.sourcePin() < source.getOutputs().size() && conn.targetPin() < target.getInputs().size()) {
-                    double val = source.getOutputs().get(conn.sourcePin()).getValue();
-                    target.getInputs().get(conn.targetPin()).setValue(val);
-                    target.getInputs().get(conn.targetPin()).setConnected(true);
-                    source.getOutputs().get(conn.sourcePin()).setConnected(true);
+                    WPin output = source.getOutputs().get(conn.sourcePin());
+                    WPin input = target.getInputs().get(conn.targetPin());
+                    if (input.getValueType().accepts(output.getValueType())) {
+                        input.copyValueFrom(output);
+                        input.setConnected(true);
+                        output.setConnected(true);
+                    }
                 }
             }
         }
