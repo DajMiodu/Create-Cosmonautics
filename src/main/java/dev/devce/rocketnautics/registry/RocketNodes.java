@@ -482,8 +482,7 @@ public class RocketNodes {
                 @Override public LuaValue call(LuaValue arg1, LuaValue arg2) {
                     if (finalSputnik != null) {
                         String name = arg1.tojstring();
-                        double val = arg2.todouble();
-                        finalSputnik.getDisplayBridge().put(name, val);
+                        finalSputnik.getDisplayBridge().put(name, arg2.isnil() ? "" : arg2.tojstring());
                     }
                     return LuaValue.NIL;
                 }

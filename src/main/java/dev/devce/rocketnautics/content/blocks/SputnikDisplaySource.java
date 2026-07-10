@@ -27,7 +27,7 @@ public class SputnikDisplaySource extends SingleLineDisplaySource {
             return EMPTY_LINE;
 
         List<WNode> displayNodes = sputnik.graph.getNodes().stream()
-                .filter(n -> "Display".equals(NodeRegistry.getCategory(n.getTypeId())))
+                .filter(SputnikDisplaySource::isDisplayNode)
                 .sorted(Comparator.comparing(WNode::getTitle))
                 .toList();
 
@@ -44,14 +44,13 @@ public class SputnikDisplaySource extends SingleLineDisplaySource {
                 return EMPTY_LINE;
 
             if (targetNode.getInputs().size() == 1) {
-                double val = targetNode.getInputs().get(0).getValue();
-                return Component.literal(String.format("%.2f", val));
+                return Component.literal(targetNode.getInputs().get(0).getValueAsString());
             } else {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < targetNode.getInputs().size(); i++) {
                     if (i > 0) sb.append(" ");
                     sb.append(targetNode.getInputs().get(i).getName()).append(": ")
-                      .append(String.format("%.2f", targetNode.getInputs().get(i).getValue()));
+                      .append(targetNode.getInputs().get(i).getValueAsString());
                 }
                 return Component.literal(sb.toString());
             }
@@ -59,8 +58,8 @@ public class SputnikDisplaySource extends SingleLineDisplaySource {
             int bridgeIndex = index - displayNodes.size();
             if (bridgeIndex >= 0 && bridgeIndex < bridgeKeys.size()) {
                 String key = bridgeKeys.get(bridgeIndex);
-                Double val = sputnik.getDisplayBridge().get(key);
-                return Component.literal(key + ": " + (val != null ? String.format("%.2f", val) : "0.00"));
+                String val = sputnik.getDisplayBridge().get(key);
+                return Component.literal(key + ": " + (val != null ? val : ""));
             }
         }
         return EMPTY_LINE;
@@ -86,7 +85,7 @@ public class SputnikDisplaySource extends SingleLineDisplaySource {
 
         List<Component> options = new ArrayList<>();
         List<WNode> displayNodes = sputnik.graph.getNodes().stream()
-                .filter(n -> "Display".equals(NodeRegistry.getCategory(n.getTypeId())))
+                .filter(SputnikDisplaySource::isDisplayNode)
                 .sorted(Comparator.comparing(WNode::getTitle))
                 .toList();
 
@@ -110,5 +109,10 @@ public class SputnikDisplaySource extends SingleLineDisplaySource {
                 .forOptions(options)
                 .titled(Component.literal("Select Display Target")),
                 "NodeIndex");
+    }
+
+    private static boolean isDisplayNode(WNode node) {
+        return "Display".equals(NodeRegistry.getCategory(node.getTypeId()))
+                || "string_display".equals(node.getTypeId().getPath());
     }
 }
