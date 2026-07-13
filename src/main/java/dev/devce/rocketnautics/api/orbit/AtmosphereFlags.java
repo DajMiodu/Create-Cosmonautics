@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Locale;
 
@@ -13,6 +14,11 @@ public enum AtmosphereFlags implements StringRepresentable {
 
     public static EnumSet<AtmosphereFlags> empty() {
         return EnumSet.noneOf(AtmosphereFlags.class);
+    }
+
+    public static EnumSet<AtmosphereFlags> properCopy(Collection<AtmosphereFlags> collection) {
+        if (collection.isEmpty()) return empty();
+        return EnumSet.copyOf(collection);
     }
 
     @Override

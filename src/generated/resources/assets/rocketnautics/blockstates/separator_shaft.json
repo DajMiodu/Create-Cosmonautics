@@ -1,0 +1,120 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft",
+        "x": 180
+      },
+      "when": {
+        "facing": "down"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft"
+      },
+      "when": {
+        "facing": "up"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft",
+        "x": 90
+      },
+      "when": {
+        "facing": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft",
+        "x": 90,
+        "y": 180
+      },
+      "when": {
+        "facing": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft",
+        "x": 90,
+        "y": 270
+      },
+      "when": {
+        "facing": "west"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_shaft",
+        "x": 90,
+        "y": 90
+      },
+      "when": {
+        "facing": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_a"
+      },
+      "when": {
+        "facing": "down|up|west|east",
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_b"
+      },
+      "when": {
+        "facing": "down|up|west|east",
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_a",
+        "y": 90
+      },
+      "when": {
+        "east": "true",
+        "facing": "down|up|north|south"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_b",
+        "y": 90
+      },
+      "when": {
+        "facing": "down|up|north|south",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_a",
+        "x": -90,
+        "y": 90
+      },
+      "when": {
+        "facing": "north|south|west|east",
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "rocketnautics:block/separator_link_b",
+        "x": -90,
+        "y": 90
+      },
+      "when": {
+        "down": "true",
+        "facing": "north|south|west|east"
+      }
+    }
+  ]
+}

@@ -28,25 +28,13 @@ import org.joml.Vector3d;
 import java.util.List;
 import java.util.UUID;
 
-public class BoosterThrusterBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, IThruster, com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation {
-    private UUID uniqueId = UUID.randomUUID();
+public class BoosterThrusterBlockEntity extends AbstractThrusterBlockEntity {
 
-    public UUID getUniqueId() {
-        return uniqueId;
-    }
-
-    @Override
-    public double readValue(String key) {
-        if (key.equals("thrust")) return getFlow() * 100.0;
-        if (key.equals("fuel")) return fuelTicks;
-        if (key.equals("ignited")) return ignited ? 1.0 : 0.0;
-        return 0;
-    }
     private static final long FUEL_SCAN_CACHE_TICKS = 5L;
 
     public ScrollValueBehaviour thrustPower;
-    public int ignitionTicks = 0;
 
+    @Override
     public int getWarmupTime() {
         return 40;
     }
@@ -75,30 +63,30 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
         behaviours.add(thrustPower);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, BoosterThrusterBlockEntity blockEntity) {
+    @Override
+    public void tick() {
+        super.tick();
+        if (level == null) return;
+
         // Runtime limit update for "Break Barrier" command
         int targetMax = RocketConfig.SERVER.brokenBarrier.get() ? 100 : 20;
-        // Since 'max' is protected, we'll use a local check or just apply it if needed.
-        // Actually, we can use the value itself to see if it's out of bounds
-        if (blockEntity.thrustPower.getValue() > targetMax || (targetMax == 100 && blockEntity.thrustPower.getValue() <= 20 && level.getGameTime() % 20 == 0)) {
-             blockEntity.thrustPower.between(1, targetMax);
+        if (thrustPower.getValue() > targetMax || (targetMax == 100 && thrustPower.getValue() <= 20 && level.getGameTime() % 20 == 0)) {
+             thrustPower.between(1, targetMax);
         }
 
-        boolean active = blockEntity.isActive();
+        boolean active = isActive();
         if (!level.isClientSide) {
-            if (active != blockEntity.currentlyBurning) {
-                blockEntity.currentlyBurning = active;
-                blockEntity.sendData();
+            if (active != currentlyBurning) {
+                currentlyBurning = active;
+                sendData();
             }
         }
 
-        blockEntity.tick();
-
         if (level.isClientSide()) {
-            blockEntity.updateSound();
+            updateSound();
 
             if (active) {
-                BlockPos fuelPos = blockEntity.findFuelPos();
+                BlockPos fuelPos = findFuelPos();
                 if (fuelPos != null) {
                     for (int i = 0; i < 2; i++) {
                         double fx = fuelPos.getX() + level.random.nextDouble();
@@ -108,32 +96,65 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
                     }
                 }
 
-                Direction nozzle = blockEntity.getThrustDirection();
-                double x = pos.getX() + 0.5 + nozzle.getStepX() * 0.7;
-                double y = pos.getY() + 0.5 + nozzle.getStepY() * 0.7;
-                double z = pos.getZ() + 0.5 + nozzle.getStepZ() * 0.7;
+                Direction nozzle = getThrustDirection();
+                double x = worldPosition.getX() + 0.5 + nozzle.getStepX() * 0.7;
+                double y = worldPosition.getY() + 0.5 + nozzle.getStepY() * 0.7;
+                double z = worldPosition.getZ() + 0.5 + nozzle.getStepZ() * 0.7;
 
                 RandomSource random = level.getRandom();
-                int power = blockEntity.thrustPower.getValue();
+                int power = thrustPower.getValue();
                 int visualPower = (int)(power * 14.25f);
 
-                net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(x, y, z);
+                Vec3 start = new Vec3(x, y, z);
                 double maxSearchDist = 64.0;
-                net.minecraft.world.phys.Vec3 end = start.add(nozzle.getStepX() * maxSearchDist, nozzle.getStepY() * maxSearchDist, nozzle.getStepZ() * maxSearchDist);
-                net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+                Vec3 end = start.add(nozzle.getStepX() * maxSearchDist, nozzle.getStepY() * maxSearchDist, nozzle.getStepZ() * maxSearchDist);
+
+                Level clipLevel = ThrusterClientHelper.getClientLevel();
+                if (clipLevel == null) {
+                    clipLevel = level;
+                }
+                Vec3 worldStart = start;
+                Vec3 worldEnd = end;
+
+                dev.ryanhcode.sable.sublevel.SubLevel ship = (dev.ryanhcode.sable.sublevel.SubLevel) dev.ryanhcode.sable.Sable.HELPER
+                        .getContaining(level, worldPosition);
+                if (ship != null) {
+                    worldStart = dev.ryanhcode.sable.Sable.HELPER.projectOutOfSubLevel(level, start);
+                    worldEnd = dev.ryanhcode.sable.Sable.HELPER.projectOutOfSubLevel(level, end);
+                }
+
+                Vec3 currentStart = worldStart;
+                net.minecraft.world.phys.BlockHitResult hit = null;
+                for (int attempt = 0; attempt < 3; attempt++) {
+                    hit = clipLevel.clip(new net.minecraft.world.level.ClipContext(
+                            currentStart, worldEnd, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                            net.minecraft.world.level.ClipContext.Fluid.NONE,
+                            net.minecraft.world.phys.shapes.CollisionContext.empty()));
+
+                    if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                        break;
+                    }
+
+                    BlockPos hitBlockPos = hit.getBlockPos();
+                    if (ship == null && hitBlockPos.equals(worldPosition)) {
+                        currentStart = hit.getLocation().add(nozzle.getStepX() * 0.1, nozzle.getStepY() * 0.1, nozzle.getStepZ() * 0.1);
+                    } else {
+                        break;
+                    }
+                }
 
                 double hitDist = maxSearchDist;
                 boolean hitBlock = false;
-                net.minecraft.world.phys.Vec3 hitPos = end;
-                if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-                    hitDist = start.distanceTo(hit.getLocation());
+                Vec3 hitPos = worldEnd;
+                if (hit != null && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                    hitDist = worldStart.distanceTo(hit.getLocation());
                     hitBlock = true;
                     hitPos = hit.getLocation();
                 }
 
                 // Spawn exhaust particles based on power and distance
                 int plumeCount = 1 + (visualPower / 4);
-                float boost = 1.0f + (blockEntity.getFlow() * 0.5f);
+                float boost = 1.0f + (getFlow() * 0.5f);
                 float actualSpeedMult = (float)Math.min(1.2f, hitDist / 10.0);
 
                 for (int i = 0; i < plumeCount; i++) {
@@ -141,7 +162,7 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
                     double speedY = nozzle.getStepY() * (2.0 + random.nextDouble() * 2.0) * boost * actualSpeedMult + (random.nextDouble() - 0.5) * 0.4;
                     double speedZ = nozzle.getStepZ() * (2.0 + random.nextDouble() * 2.0) * boost * actualSpeedMult + (random.nextDouble() - 0.5) * 0.4;
 
-                    var particle = (blockEntity.ignitionTicks < blockEntity.getWarmupTime() / 2) ?
+                    var particle = (ignitionTicks < getWarmupTime() / 2) ?
                             RocketParticles.PLUME.get() :
                             RocketParticles.PLASMA.get();
 
@@ -150,27 +171,27 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
 
                 if (hitBlock && random.nextFloat() < (visualPower / 50.0f)) {
                     for (int i = 0; i < (1 + visualPower / 5); i++) {
-                        net.minecraft.world.phys.Vec3 normal = new net.minecraft.world.phys.Vec3(hit.getDirection().getStepX(), hit.getDirection().getStepY(), hit.getDirection().getStepZ());
-                        net.minecraft.world.phys.Vec3 randomDir = new net.minecraft.world.phys.Vec3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5).normalize();
-                        net.minecraft.world.phys.Vec3 spreadDir = randomDir.subtract(normal.scale(randomDir.dot(normal))).normalize();
+                        Vec3 normal = new Vec3(hit.getDirection().getStepX(), hit.getDirection().getStepY(), hit.getDirection().getStepZ());
+                        Vec3 randomDir = new Vec3(random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5).normalize();
+                        Vec3 spreadDir = randomDir.subtract(normal.scale(randomDir.dot(normal))).normalize();
                         double speed = 0.5 + random.nextDouble() * 1.5;
-                        level.addParticle(RocketParticles.JET_SMOKE.get(), hitPos.x, hitPos.y, hitPos.z, spreadDir.x * speed, spreadDir.y * speed, spreadDir.z * speed);
+                        clipLevel.addParticle(RocketParticles.JET_SMOKE.get(), hitPos.x, hitPos.y, hitPos.z, spreadDir.x * speed, spreadDir.y * speed, spreadDir.z * speed);
                     }
                 }
             }
         }
 
         if (active) {
-            if (blockEntity.ignitionTicks < 100) blockEntity.ignitionTicks++;
+            if (ignitionTicks < 100) ignitionTicks++;
         } else {
-            if (blockEntity.ignitionTicks > 0) {
-                blockEntity.ignitionTicks--;
+            if (ignitionTicks > 0) {
+                ignitionTicks--;
             }
         }
 
         if (!level.isClientSide && active) {
-            blockEntity.handleHeat();
-            blockEntity.consumeFuel();
+            handleHeat();
+            consumeFuel();
         }
     }
 
@@ -229,49 +250,28 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
         double currentThrust = thrustPower.getValue() * 50.0;
         Vector3d thrustVector = new Vector3d(pushDirection.getStepX() * currentThrust, pushDirection.getStepY() * currentThrust, pushDirection.getStepZ() * currentThrust);
 
-        Vector3d blockCenter = new Vector3d(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5);
-        handle.applyImpulseAtPoint(blockCenter, thrustVector.mul(deltaTime));
+        Vector3d forcePos = new Vector3d(
+            worldPosition.getX() + 0.5 + facing.getStepX() * 0.5,
+            worldPosition.getY() + 0.5 + facing.getStepY() * 0.5,
+            worldPosition.getZ() + 0.5 + facing.getStepZ() * 0.5
+        );
+        handle.applyImpulseAtPoint(forcePos, thrustVector.mul(deltaTime));
     }
 
     @Override
     public void remove() {
         super.remove();
         if (level != null && level.isClientSide) {
-            ClientLogic.stopSound(this);
+            ThrusterClientHelper.stopSound(this);
         }
     }
-
-    private Object soundInstance;
 
     private void updateSound() {
         if (level.isClientSide) {
-            ClientLogic.updateSound(this);
-        }
-    }
-
-    private static class ClientLogic {
-        private static void updateSound(BoosterThrusterBlockEntity be) {
-            if (!be.isActive()) {
-                stopSound(be);
-                return;
-            }
-
-            if (be.soundInstance == null) {
-                startSound(be);
-            }
-        }
-
-        private static void startSound(BoosterThrusterBlockEntity be) {
-            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-            ThrusterSoundInstance instance = new ThrusterSoundInstance(be);
-            mc.getSoundManager().play(instance);
-            be.soundInstance = instance;
-        }
-
-        private static void stopSound(BoosterThrusterBlockEntity be) {
-            if (be.soundInstance instanceof ThrusterSoundInstance instance) {
-                instance.stopSound();
-                be.soundInstance = null;
+            if (!isActive()) {
+                ThrusterClientHelper.stopSound(this);
+            } else if (soundInstance == null) {
+                ThrusterClientHelper.startSound(this, this);
             }
         }
     }
@@ -407,29 +407,23 @@ public class BoosterThrusterBlockEntity extends SmartBlockEntity implements Bloc
     @Override
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
-        tag.putUUID("UniqueId", uniqueId);
         tag.putInt("Fuel", fuelTicks);
         tag.putBoolean("Burning", currentlyBurning);
         tag.putBoolean("Ignited", ignited);
         tag.putBoolean("Spent", isSpent);
         tag.putBoolean("ComputerActive", computerActive);
         tag.putInt("FuelTicks", fuelTicks);
-        tag.putInt("IgnitionTicks", ignitionTicks);
     }
 
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
-        if (tag.hasUUID("UniqueId")) {
-            uniqueId = tag.getUUID("UniqueId");
-        }
         fuelTicks = tag.getInt("Fuel");
         currentlyBurning = tag.getBoolean("Burning");
         ignited = tag.getBoolean("Ignited");
         isSpent = tag.getBoolean("Spent");
         computerActive = tag.getBoolean("ComputerActive");
         fuelTicks = tag.getInt("FuelTicks");
-        ignitionTicks = tag.getInt("IgnitionTicks");
         invalidateFuelCache();
     }
 

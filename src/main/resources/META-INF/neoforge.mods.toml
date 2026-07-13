@@ -4,41 +4,70 @@ license="GNU GPL v3"
 
 [[mixins]]
 config="rocketnautics.mixins.json"
+[[mixins]]
+config="dimensional_sable.mixins.json"
 
 [[mods]]
 modId="rocketnautics"
-version="1.3.8"
+version="${file.jarVersion}"
 displayName="Create: Cosmonautics"
-displayURL="https://github.com"
-authors="webyep, LordAret, SSnowly, M_W_K"
+displayURL="https://github.com/CosmonauticsTeam/Create-Cosmonautics"
+authors="webyep-art, M_W_K"
 description='''
-An addon for Create Aeronautics adding Rocket Thrusters! Now rebranded as Cosmonautics.
+Space addon for Create Aeronautics!
 '''
+
+[[mods]]
+modId="dimensional_sable"
+version="1.0.5"
+displayName="Dimensional Sable"
+description='''Dimensional Support for Sable'''
+
+[[dependencies.rocketnautics]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.21.1]"
+    ordering="NONE"
+    side="BOTH"
 
 [[dependencies.rocketnautics]]
     modId="neoforge"
-    type="required"
+    mandatory=true
     versionRange="[21.1.1,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.rocketnautics]]
     modId="create"
-    type="required"
+    mandatory=true
     versionRange="[1.21.1,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.rocketnautics]]
     modId="aeronautics"
-    type="required"
+    mandatory=true
     versionRange="[1.0.0,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.rocketnautics]]
     modId="dimensional_sable"
-    type="required"
+    mandatory=true
     versionRange="[1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.dimensional_sable]]
+    modId="neoforge"
+    mandatory=true
+    versionRange="[21.1.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.dimensional_sable]]
+    modId="sable"
+    mandatory=true
+    versionRange="[2.0.3,)"
     ordering="NONE"
     side="BOTH"

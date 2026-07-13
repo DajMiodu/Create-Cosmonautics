@@ -2,22 +2,25 @@ package dev.devce.rocketnautics.content.blocks;
 
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
-import dev.devce.rocketnautics.registry.RocketParticles;
-import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
-import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.RandomSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.joml.Vector3d;
+import net.minecraft.world.phys.Vec3;
+
+import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
+import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 
 import java.util.List;
 
-public class RCSThrusterBlockEntity extends RocketThrusterBlockEntity {
+public class RCSThrusterBlockEntity extends AbstractThrusterBlockEntity {
+    public ThrustBehaviour thrust;
+    public boolean currentlyBurning = false;
+    private boolean computerActive = false;
 
     public RCSThrusterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -25,6 +28,10 @@ public class RCSThrusterBlockEntity extends RocketThrusterBlockEntity {
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+        thrust = new ThrustBehaviour(this)
+                .withType(ThrustBehaviour.EngineType.RCS)
+                .withOffset(new Vec3(0.5, 0.5, 0.5));
+        behaviours.add(thrust);
     }
 
     @Override
@@ -33,11 +40,37 @@ public class RCSThrusterBlockEntity extends RocketThrusterBlockEntity {
     }
 
     @Override
-    public int getCurrentPower() {
-        return isActive() ? 1 : 0;
+    public void tick() {
+        super.tick();
+        if (level == null) return;
+
+        boolean active = isActive();
+        if (!level.isClientSide) {
+            if (active != currentlyBurning) {
+                currentlyBurning = active;
+                sendData();
+            }
+        }
+
+        Direction facing = getThrustDirection();
+        thrust.withOffset(new Vec3(0.5, 0.5, 0.5).add(facing.getStepX() * 0.5, facing.getStepY() * 0.5, facing.getStepZ() * 0.5));
+        thrust.update(
+                (float) calculateRcsThrust(),
+                active ? 1.0f : 0.0f,
+                new Vec3(facing.getStepX(), facing.getStepY(), facing.getStepZ()),
+                active
+        );
     }
 
-    private boolean computerActive = false;
+    @Override
+    public void sable$physicsTick(ServerSubLevel serverSubLevel, RigidBodyHandle handle, double deltaTime) {
+        thrust.applyPhysicsForce(handle, deltaTime);
+    }
+
+    @Override
+    public int getWarmupTime() {
+        return 0;
+    }
 
     @Override
     public boolean isActive() {
@@ -53,13 +86,27 @@ public class RCSThrusterBlockEntity extends RocketThrusterBlockEntity {
     }
 
     @Override
-    public void sable$physicsTick(ServerSubLevel serverSubLevel, RigidBodyHandle handle, double deltaTime) {
-        if (!isActive()) return;
-        assert level != null;
+    public void setThrottle(float throttle) {
+        // RCS doesn't use throttle settings
+    }
+
+    @Override
+    public void setGimbal(double pitch, double yaw) {
+        // RCS has no gimbal
+    }
+
+    @Override
+    public float getFlow() {
+        return isActive() ? 1.0f : 0.0f;
+    }
+
+    private double calculateRcsThrust() {
+        if (level == null) return 0;
+        dev.ryanhcode.sable.sublevel.SubLevel ship = (dev.ryanhcode.sable.sublevel.SubLevel) dev.ryanhcode.sable.Sable.HELPER.getContaining(level, worldPosition);
+        if (ship == null) return 0;
 
         double maxThrust = 105.0;
-        double y = serverSubLevel.logicalPose().position().y;
-
+        double y = ship.logicalPose().position().y;
 
         if (y < 5000) {
             if (y <= 2000) {
@@ -69,81 +116,40 @@ public class RCSThrusterBlockEntity extends RocketThrusterBlockEntity {
                 maxThrust = 12.0 + (93.0 * factor);
             }
         }
-
-        double currentThrust = Math.min(7 * level.getBestNeighborSignal(worldPosition), maxThrust);
-
-        Direction facing = getThrustDirection();
-        Direction pushDirection = facing.getOpposite();
-
-        Vector3d thrustVector = new Vector3d(
-                pushDirection.getStepX() * currentThrust,
-                pushDirection.getStepY() * currentThrust,
-                pushDirection.getStepZ() * currentThrust
-        );
-
-        Vector3d blockCenter = new Vector3d(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5);
-        handle.applyImpulseAtPoint(blockCenter, thrustVector.mul(deltaTime));
+        return Math.min(7 * level.getBestNeighborSignal(worldPosition), maxThrust);
     }
 
-    @Override
-    public int getWarmupTime() {
-        return 0;
-    }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, RCSThrusterBlockEntity blockEntity) {
-        boolean active = blockEntity.isActive();
-        if (!level.isClientSide) {
-            if (active != blockEntity.currentlyBurning) {
-                blockEntity.currentlyBurning = active;
-                blockEntity.sendData();
-            }
-        }
-
-        blockEntity.tick();
-
-        if (level.isClientSide()) {
-            if (active) {
-                Direction nozzle = blockEntity.getThrustDirection();
-                Vector3d pDir = new Vector3d(nozzle.getStepX(), nozzle.getStepY(), nozzle.getStepZ());
-
-                double x = pos.getX() + 0.5 + pDir.x() * 0.55;
-                double y = pos.getY() + 0.5 + pDir.y() * 0.55;
-                double z = pos.getZ() + 0.5 + pDir.z() * 0.55;
-
-                RandomSource random = level.getRandom();
-
-                for (int i = 0; i < 2; i++) {
-                    double speedX = pDir.x() * (0.3 + random.nextDouble() * 0.2) + (random.nextDouble() - 0.5) * 0.05;
-                    double speedY = pDir.y() * (0.3 + random.nextDouble() * 0.2) + (random.nextDouble() - 0.5) * 0.05;
-                    double speedZ = pDir.z() * (0.3 + random.nextDouble() * 0.2) + (random.nextDouble() - 0.5) * 0.05;
-
-                    level.addParticle(RocketParticles.RCS_GAS.get(), x, y, z, speedX, speedY, speedZ);
-                }
-            }
-        }
-
-        if (active) {
-            if (blockEntity.ignitionTicks < 10) blockEntity.ignitionTicks++;
-        } else {
-            if (blockEntity.ignitionTicks > 0) blockEntity.ignitionTicks--;
-        }
+    public Direction getThrustDirection() {
+        return getBlockState().getValue(RocketThrusterBlock.FACING);
     }
 
     @Override
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
+        tag.putBoolean("Burning", currentlyBurning);
         tag.putBoolean("ComputerActive", computerActive);
     }
 
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
+        currentlyBurning = tag.getBoolean("Burning");
         computerActive = tag.getBoolean("ComputerActive");
     }
 
     @Override
-    public void remove() {
-        super.remove();
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        tooltip.add(Component.literal("    ").append(Component.translatable(getBlockState().getBlock().getDescriptionId()).withStyle(net.minecraft.ChatFormatting.GOLD)));
+
+        tooltip.add(Component.literal("  ").append(Component.translatable("rocketnautics.goggles.status")).append(": ")
+                .append(isActive() ? Component.translatable("rocketnautics.goggles.active").withStyle(net.minecraft.ChatFormatting.GREEN) :
+                        Component.translatable("rocketnautics.goggles.inactive").withStyle(net.minecraft.ChatFormatting.RED)));
+
+        double thrustForce = calculateRcsThrust();
+        tooltip.add(Component.literal("  ").append(Component.translatable("rocketnautics.goggles.thrust")).append(": ")
+                .append(Component.literal(String.format("%.1f N", thrustForce)).withStyle(net.minecraft.ChatFormatting.GOLD)));
+
+        return true;
     }
 
     @Override

@@ -55,6 +55,14 @@ public class WNode {
     }
 
     /**
+     * Returns the current evaluator so callers can wrap it with additional logic.
+     * @return The current Evaluator instance.
+     */
+    public Evaluator getEvaluator() {
+        return evaluator;
+    }
+
+    /**
      * Executes the node's custom logic.
      */
     public void evaluate() {
@@ -92,7 +100,11 @@ public class WNode {
      * @param color Display color of the pin.
      */
     public void addInput(String name, int color) {
-        WPin pin = new WPin(name, WPin.Type.INPUT, color);
+        addInput(name, color, WPin.ValueType.NUMBER);
+    }
+
+    public void addInput(String name, int color, WPin.ValueType valueType) {
+        WPin pin = new WPin(name, WPin.Type.INPUT, color, valueType);
         this.inputs.add(pin);
         updateLayout();
     }
@@ -103,7 +115,11 @@ public class WNode {
      * @param color Display color of the pin.
      */
     public void addOutput(String name, int color) {
-        WPin pin = new WPin(name, WPin.Type.OUTPUT, color);
+        addOutput(name, color, WPin.ValueType.NUMBER);
+    }
+
+    public void addOutput(String name, int color, WPin.ValueType valueType) {
+        WPin pin = new WPin(name, WPin.Type.OUTPUT, color, valueType);
         this.outputs.add(pin);
         updateLayout();
     }
@@ -160,8 +176,10 @@ public class WNode {
         
         // Title Bar
         boolean isFailed = getCustomData().getBoolean("err") || getCustomData().getBoolean("failed");
-        graphics.fill(x, y, x + width, y + 15, isFailed ? 0xAAFF0000 : 0x44000000);
-        int headerCol = isFailed ? 0xFFFF0000 : 0xFF00FF88;
+        int headerCol = isFailed ? 0xFFFF0000 : (getCustomData().contains("categoryColor") ? getCustomData().getInt("categoryColor") : 0xFF00FF88);
+        int headerBgCol = isFailed ? 0xAAFF0000 : (headerCol & 0x44FFFFFF);
+        
+        graphics.fill(x, y, x + width, y + 15, headerBgCol);
         graphics.fill(x, y + 14, x + width, y + 15, headerCol);
         
         // Border
@@ -173,7 +191,7 @@ public class WNode {
         }
         
         if (!net.neoforged.fml.loading.FMLEnvironment.dist.isDedicatedServer()) {
-            graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, title, x + 5, y + 3, isFailed ? 0xFFFF5555 : 0xFF00FF88, false);
+            graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, title, x + 5, y + 3, isFailed ? 0xFFFF5555 : headerCol, false);
         }
 
         int maxInputLabelWidth = 0;
@@ -373,7 +391,7 @@ public class WNode {
         if (inputsTag.size() > 0 && inputs.isEmpty()) {
             for (int i = 0; i < inputsTag.size(); i++) {
                 net.minecraft.nbt.CompoundTag pinTag = inputsTag.getCompound(i);
-                addInput(pinTag.getString("name"), pinTag.getInt("color"));
+                addInput(pinTag.getString("name"), pinTag.getInt("color"), WPin.ValueType.byName(pinTag.getString("valueType")));
                 inputs.get(i).load(pinTag);
             }
         } else {
@@ -384,7 +402,7 @@ public class WNode {
         if (outputsTag.size() > 0 && outputs.isEmpty()) {
             for (int i = 0; i < outputsTag.size(); i++) {
                 net.minecraft.nbt.CompoundTag pinTag = outputsTag.getCompound(i);
-                addOutput(pinTag.getString("name"), pinTag.getInt("color"));
+                addOutput(pinTag.getString("name"), pinTag.getInt("color"), WPin.ValueType.byName(pinTag.getString("valueType")));
                 outputs.get(i).load(pinTag);
             }
         } else {

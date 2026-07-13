@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "rocketnautics:block/hose_anchor",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "rocketnautics:block/hose_anchor",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "rocketnautics:block/hose_anchor",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "rocketnautics:block/hose_anchor",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "rocketnautics:block/hose_anchor"
+    },
+    "facing=west": {
+      "model": "rocketnautics:block/hose_anchor",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

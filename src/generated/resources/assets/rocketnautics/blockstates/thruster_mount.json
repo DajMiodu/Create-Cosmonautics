@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "rocketnautics:block/thruster_mount",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "rocketnautics:block/thruster_mount",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "rocketnautics:block/thruster_mount",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "rocketnautics:block/thruster_mount",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "rocketnautics:block/thruster_mount"
+    },
+    "facing=west": {
+      "model": "rocketnautics:block/thruster_mount",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

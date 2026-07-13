@@ -3,6 +3,7 @@ package dev.devce.websnodelib.client.ui;
 import dev.devce.websnodelib.api.WGraph;
 import dev.devce.websnodelib.api.WNode;
 import dev.devce.websnodelib.api.WConnection;
+import dev.devce.websnodelib.api.WPin;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -37,6 +38,7 @@ public class WNodeScreen extends Screen {
     private WNode draggingNode = null;
     private double dragOffsetX = 0;
     private double dragOffsetY = 0;
+    private boolean gridSnap = false;
 
     // Connection state
     private WNode linkingNode = null;
@@ -310,6 +312,46 @@ public class WNodeScreen extends Screen {
         // AI FIX/ADD STOP
         
         renderMinimap(graphics, mouseX, mouseY);
+        
+        // Tooltips
+        renderTooltips(graphics, mouseX, mouseY);
+    }
+    
+    private void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (isPanning || draggingNode != null || isSelecting || linkingNode != null || isSearching || activeItemPicker != null) return;
+        
+        int nx = (int) getGraphX(mouseX);
+        int ny = (int) getGraphY(mouseY);
+        
+        for (WNode node : graph.getNodes()) {
+            boolean isHoveringNode = nx >= node.getX() && nx <= node.getX() + node.getWidth() && ny >= node.getY() && ny <= node.getY() + node.getHeight();
+            if (!isHoveringNode) continue;
+            
+            // Check pins
+            int inPin = node.getPinAt(nx - node.getX(), ny - node.getY(), true);
+            if (inPin != -1) {
+                WPin pin = node.getInputs().get(inPin);
+                graphics.renderTooltip(font, Component.literal(pin.getValueType().name() + ": " + pin.getValueAsString()), mouseX, mouseY);
+                return;
+            }
+            int outPin = node.getPinAt(nx - node.getX(), ny - node.getY(), false);
+            if (outPin != -1) {
+                WPin pin = node.getOutputs().get(outPin);
+                graphics.renderTooltip(font, Component.literal(pin.getValueType().name() + ": " + pin.getValueAsString()), mouseX, mouseY);
+                return;
+            }
+            
+            // Check title bar
+            if (ny <= node.getY() + 15) {
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.literal(node.getTitle()).withStyle(net.minecraft.ChatFormatting.GOLD));
+                if (node.getCustomData().contains("code")) {
+                    tooltip.add(Component.literal("Lua Script Node").withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+                graphics.renderTooltip(font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+                return;
+            }
+        }
     }
 
     // AI FIX/ADD START
@@ -500,8 +542,18 @@ public class WNodeScreen extends Screen {
             SearchItem item = filteredItemsList.get(idx);
             
             if (item.isHeader) {
-                graphics.fill(menuX + 1, menuY + 15 + i * itemH, menuX + mw - 1, menuY + 15 + (i + 1) * itemH, 0x22FFFFFF);
-                graphics.drawString(font, "§7[" + item.category + "]", menuX + 4, menuY + 16 + i * itemH, 0xFFAAAAAA, false);
+                int catColor = 0xFFAAAAAA;
+                String catLower = item.category.toLowerCase();
+                if (catLower.equals("sensors")) catColor = 0xFF00AAFF;
+                else if (catLower.equals("actuators")) catColor = 0xFFFFAA00;
+                else if (catLower.equals("math")) catColor = 0xFF00FF88;
+                else if (catLower.equals("logic")) catColor = 0xFFFF5555;
+                else if (catLower.equals("communication")) catColor = 0xFFAA00FF;
+                else if (catLower.equals("display")) catColor = 0xFFFFFF00;
+                else if (catLower.equals("functions")) catColor = 0xFF00AAAA;
+                
+                graphics.fill(menuX + 1, menuY + 15 + i * itemH, menuX + mw - 1, menuY + 15 + (i + 1) * itemH, (catColor & 0x00FFFFFF) | 0x22000000);
+                graphics.drawString(font, "[" + item.category + "]", menuX + 4, menuY + 16 + i * itemH, catColor, false);
                 continue;
             }
 
@@ -902,7 +954,7 @@ public class WNodeScreen extends Screen {
                             if (this.onSave != null) this.onSave.accept(this.graph.save());
                         }, this));
                         return true;
-                    } else if (node.getTypeId().getPath().equals("lua_script")) {
+                    } else if (node.getCustomData().contains("code")) {
                         minecraft.setScreen(new WLuaEditorScreen(node, this));
                         return true;
                     }
@@ -962,9 +1014,13 @@ public class WNodeScreen extends Screen {
             for (WNode node : graph.getNodes()) {
                 int inPin = node.getPinAt(nx - node.getX(), ny - node.getY(), true);
                 if (inPin != -1) {
-                    pushUndo();
-                    graph.connect(linkingNode.getId(), linkingPin, node.getId(), inPin);
-                    if (onSave != null) onSave.accept(graph.save());
+                    WPin output = linkingNode.getOutputs().get(linkingPin);
+                    WPin input = node.getInputs().get(inPin);
+                    if (input.getValueType().accepts(output.getValueType())) {
+                        pushUndo();
+                        graph.connect(linkingNode.getId(), linkingPin, node.getId(), inPin);
+                        if (onSave != null) onSave.accept(graph.save());
+                    }
                     break;
                 }
             }
@@ -1002,7 +1058,13 @@ public class WNodeScreen extends Screen {
             
             for (WNode n : graph.getNodes()) {
                 if (n.isSelected()) {
-                    n.setPos(n.getX() + dx, n.getY() + dy);
+                    int newX = n.getX() + dx;
+                    int newY = n.getY() + dy;
+                    if (gridSnap) {
+                        newX = Math.round(newX / 10.0f) * 10;
+                        newY = Math.round(newY / 10.0f) * 10;
+                    }
+                    n.setPos(newX, newY);
                 }
             }
             return true;
@@ -1030,6 +1092,38 @@ public class WNodeScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_G) {
+            gridSnap = !gridSnap;
+            if (minecraft != null && minecraft.player != null) {
+                minecraft.player.displayClientMessage(Component.literal("Grid Snapping: " + (gridSnap ? "ON" : "OFF")), true);
+            }
+            return true;
+        }
+        
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_HOME) {
+            if (!graph.getNodes().isEmpty()) {
+                int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                for (WNode n : graph.getNodes()) {
+                    minX = Math.min(minX, n.getX()); minY = Math.min(minY, n.getY());
+                    maxX = Math.max(maxX, n.getX() + n.getWidth()); maxY = Math.max(maxY, n.getY() + n.getHeight());
+                }
+                double centerX = (minX + maxX) / 2.0;
+                double centerY = (minY + maxY) / 2.0;
+                panX = -centerX + width / 2.0;
+                panY = -centerY + height / 2.0;
+                
+                double w = maxX - minX + 100;
+                double h = maxY - minY + 100;
+                double zoomX = width / w;
+                double zoomY = height / h;
+                zoom = (float) Math.max(0.2, Math.min(1.0, Math.min(zoomX, zoomY)));
+            } else {
+                panX = 0; panY = 0; zoom = 1.0f;
+            }
+            return true;
+        }
+
         // AI FIX/ADD START
         if (selectedNode != null && selectedNode.keyPressed(keyCode, scanCode, modifiers)) return true;
         // AI FIX/ADD STOP
@@ -1324,25 +1418,10 @@ public class WNodeScreen extends Screen {
         
         java.util.Map<String, List<ResourceLocation>> grouped = new java.util.TreeMap<>();
         
-        java.util.Set<String> foundTypes = new java.util.HashSet<>();
-        if (graph.getContext() instanceof dev.devce.rocketnautics.content.blocks.SputnikBlockEntity sputnik) {
-            for (dev.devce.rocketnautics.api.peripherals.IPeripheral p : sputnik.getPeripherals()) {
-                if (p != null && p.getPeripheralType() != null) {
-                    foundTypes.add(p.getPeripheralType().toLowerCase());
-                }
-            }
-        }
-        
         for (net.minecraft.resources.ResourceLocation type : all) {
             String path = type.getPath().toLowerCase();
             String category = dev.devce.websnodelib.api.NodeRegistry.getCategory(type);
             String cleanCategory = category.toLowerCase().replaceAll("[^a-z0-9]", "");
-            
-            // Context-sensitive filtering
-            if (path.equals("vector_control") && !foundTypes.contains("vector_engine")) continue;
-            if (path.equals("rcs_control") && !foundTypes.contains("rcs")) continue;
-            if (path.equals("booster_control") && !foundTypes.contains("booster")) continue;
-            if (path.equals("thruster_control") && !foundTypes.contains("thruster")) continue;
             
             if (query.isEmpty() || path.contains(query) || category.toLowerCase().contains(query) || cleanCategory.contains(query)) {
                 grouped.computeIfAbsent(category, k -> new ArrayList<>()).add(type);

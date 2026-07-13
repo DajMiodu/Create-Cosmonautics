@@ -33,28 +33,11 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.literal("someone said this \"black pokeball block\"").withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltip.add(Component.literal("The brain of your spacecraft.").withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltip.add(Component.literal("Runs a Lua node graph every tick — read sensors,").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal("control thrusters, send radio packets and more.").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal("Right-click to open the node editor.").withStyle(net.minecraft.ChatFormatting.AQUA));
     }
-
-    @Override
-    public boolean isSignalSource(BlockState state) {
-        return true;
-    }
-
-    @Override
-    public int getSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, net.minecraft.core.Direction direction) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof SputnikBlockEntity sputnik) {
-            return sputnik.getSignal(direction.getOpposite());
-        }
-        return 0;
-    }
-
-    @Override
-    public int getDirectSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, net.minecraft.core.Direction direction) {
-        return getSignal(state, level, pos, direction);
-    }
-
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
@@ -93,7 +76,14 @@ public class SputnikBlock extends BaseEntityBlock implements IBE<SputnikBlockEnt
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof SputnikBlockEntity sputnik) {
-                sputnik.releaseChunk();
+                if (!level.isClientSide() && level.getServer() != null) {
+                    var radioMgr = dev.devce.rocketnautics.api.radio.RadioNetworkManager.getInstance(level.getServer());
+                    for (var node : sputnik.graph.getNodes()) {
+                        if (node.getTypeId().getPath().equals("radio")) {
+                            radioMgr.removeNode(node.getId());
+                        }
+                    }
+                }
             }
             super.onRemove(state, level, pos, newState, isMoving);
         }

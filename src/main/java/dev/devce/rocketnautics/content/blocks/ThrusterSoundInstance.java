@@ -31,13 +31,18 @@ public class ThrusterSoundInstance extends AbstractTickableSoundInstance {
         }
 
         com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour behaviour = blockEntity.getThrustPower();
-        int power = (behaviour != null) ? behaviour.getValue() : 1;
-        float targetVolume = (0.2f + (power / 10.0f)) * 10.0f;
-        float targetPitch = 0.5f + (power / 20.0f);
-
+        int power = (behaviour != null) ? behaviour.getValue() : 5; // Default for RCS/Booster
         
-        this.volume = Mth.lerp(0.1f, this.volume, targetVolume);
-        this.pitch = Mth.lerp(0.1f, this.pitch, targetPitch);
+        float targetVolume = 0.4f + (power / 20.0f) * 0.6f;
+        float targetPitch = 0.7f + (power / 20.0f) * 0.5f;
+
+        if (blockEntity instanceof RCSThrusterBlockEntity) {
+            targetVolume *= 0.3f;
+            targetPitch *= 1.5f;
+        }
+
+        this.volume = Mth.lerp(0.05f, this.volume, targetVolume);
+        this.pitch = Mth.lerp(0.05f, this.pitch, targetPitch);
         
         
         this.x = blockEntity.getBlockPos().getX() + 0.5f;

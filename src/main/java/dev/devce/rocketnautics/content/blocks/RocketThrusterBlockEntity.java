@@ -5,7 +5,6 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import dev.devce.rocketnautics.RocketConfig;
-import dev.devce.rocketnautics.registry.RocketParticles;
 import dev.devce.rocketnautics.registry.RocketTags;
 import dev.ryanhcode.sable.api.block.BlockEntitySubLevelActor;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
@@ -15,13 +14,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -30,13 +25,7 @@ import org.joml.Vector3d;
 
 import java.util.List;
 
-/**
- * Block Entity for the Rocket Thruster.
- * Handles fuel logic, ignition sequences, physics force application via Sable,
- * and complex visual/particle effects for the rocket's exhaust plume.
- */
-public class RocketThrusterBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, IThruster,
-        com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation {
+public class RocketThrusterBlockEntity extends AbstractThrusterBlockEntity {
     private static int getMaxFuelConsumption() {
         return RocketConfig.SERVER.maxFuelConsumption.get();
     }
@@ -54,6 +43,7 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
     public FluidTank fuelTank = new FluidTank(1000, fluid -> true);
     public ScrollValueBehaviour minThrust;
     public ScrollValueBehaviour maxThrust;
+    public ThrustBehaviour thrust;
 
     @Override
     public ScrollValueBehaviour getThrustPower() {
@@ -67,7 +57,6 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
             0x3366FF,
             true);
 
-    public int ignitionTicks = 0;
     public boolean currentlyBurning = false;
     public float fuelThrottle = 0.0f;
     private float internalFlow = 0.0f;
@@ -84,6 +73,7 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
     // Gimbal state
     public Vector3d gimbalOffset = new Vector3d(0, 0, 0);
 
+    @Override
     public int getWarmupTime() {
         return 40;
     }
@@ -113,8 +103,13 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
         maxThrust.withFormatter(v -> (v * 50) + " N");
         maxThrust.setValue(limit);
 
+        thrust = new ThrustBehaviour(this)
+                .withType(ThrustBehaviour.EngineType.ROCKET)
+                .withOffset(new Vec3(0.5, 0.5, 0.5));
+
         behaviours.add(minThrust);
         behaviours.add(maxThrust);
+        behaviours.add(thrust);
     }
 
     /**
@@ -134,331 +129,7 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
         return (int) ((min + (max - min) * fuelThrottle) * targetThrottle);
     }
 
-    private float getVisualBoost() {
-        return 1.0f + (fuelThrottle * 0.5f);
-    }
-
-    public Vector3d getParticleDirection() {
-        Direction nozzle = getThrustDirection();
-        return new Vector3d(nozzle.getStepX(), nozzle.getStepY(), nozzle.getStepZ());
-    }
-
-    /**
-     * Main ticking logic for the thruster.
-     * Handles particle spawning, camera shake, entity damage, and block melting.
-     */
-    public static void tick(Level level, BlockPos pos, BlockState state, RocketThrusterBlockEntity blockEntity) {
-        // Runtime limit update for "Break Barrier" command
-        int targetMax = RocketConfig.SERVER.brokenBarrier.get() ? 100 : 20;
-        // Check if current value exceeds limit or if we need to expand (periodic check for expansion to avoid every-tick calls)
-        if (blockEntity.maxThrust.getValue() > targetMax || (targetMax == 100 && blockEntity.maxThrust.getValue() <= 20 && level.getGameTime() % 20 == 0)) {
-            blockEntity.maxThrust.between(0, targetMax);
-        }
-        if (!level.isClientSide) {
-            blockEntity.updateActiveState();
-        }
-
-        blockEntity.tick();
-        boolean active = blockEntity.isActive();
-
-        if (level.isClientSide()) {
-            // Client-side visual and auditory effects
-            blockEntity.updateSound();
-
-            if (active) {
-                Vector3d pDir = blockEntity.getParticleDirection();
-                double x = pos.getX() + 0.5 + pDir.x() * 0.7;
-                double y = pos.getY() + 0.5 + pDir.y() * 0.7;
-                double z = pos.getZ() + 0.5 + pDir.z() * 0.7;
-
-                RandomSource random = level.getRandom();
-                int power = blockEntity.getCurrentPower();
-                int visualPower = (int) (power * 14.25f);
-                float boost = blockEntity.getVisualBoost();
-
-                // Calculate exhaust plume distance and collision with blocks
-                net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(x, y, z);
-                double maxSearchDist = 15.0 + (visualPower / 10.0);
-                net.minecraft.world.phys.Vec3 end = start.add(pDir.x() * maxSearchDist, pDir.y() * maxSearchDist,
-                        pDir.z() * maxSearchDist);
-
-                double hitDist = maxSearchDist;
-                boolean hitBlock = false;
-                net.minecraft.world.phys.Vec3 hitPos = end;
-                net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(
-                        start, end, net.minecraft.world.level.ClipContext.Block.COLLIDER,
-                        net.minecraft.world.level.ClipContext.Fluid.NONE,
-                        net.minecraft.world.phys.shapes.CollisionContext.empty()));
-                if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-                    hitDist = start.distanceTo(hit.getLocation());
-                    hitBlock = true;
-                    hitPos = hit.getLocation();
-                }
-
-                // Spawn exhaust particles based on power and distance
-                int plumeCount = 1 + (visualPower / 20);
-                float baseSpeedMult = 0.8f + (visualPower / 100.0f) * 1.2f;
-                float actualSpeedMult = baseSpeedMult;
-
-                for (int i = 0; i < plumeCount; i++) {
-                    // Add small jitter to spawn position to prevent Z-fighting
-                    double rx = x + (random.nextDouble() - 0.5) * 0.1;
-                    double ry = y + (random.nextDouble() - 0.5) * 0.1;
-                    double rz = z + (random.nextDouble() - 0.5) * 0.1;
-
-                    double speedX = pDir.x() * (0.3 + random.nextDouble() * 0.4) * boost * actualSpeedMult
-                            + (random.nextDouble() - 0.5) * 0.05;
-                    double speedY = pDir.y() * (0.3 + random.nextDouble() * 0.4) * boost * actualSpeedMult
-                            + (random.nextDouble() - 0.5) * 0.05;
-                    double speedZ = pDir.z() * (0.3 + random.nextDouble() * 0.4) * boost * actualSpeedMult
-                            + (random.nextDouble() - 0.5) * 0.05;
-
-                    // Central white-hot plasma core
-                    if (random.nextFloat() < 0.6f) {
-                        double pSpeedX = speedX * 1.1;
-                        double pSpeedY = speedY * 1.1;
-                        double pSpeedZ = speedZ * 1.1;
-                        level.addParticle(RocketParticles.PLASMA.get(), rx, ry, rz, pSpeedX, pSpeedY, pSpeedZ);
-                    }
-
-                    // Main plume (fading to smoke)
-                    level.addParticle(RocketParticles.PLUME.get(), rx, ry, rz, speedX, speedY, speedZ);
-
-                    // Persistent smoke trail (contrail)
-                    if (random.nextFloat() < 0.08f) { // Lower frequency for cleaner look
-                        dev.ryanhcode.sable.sublevel.SubLevel ship = (dev.ryanhcode.sable.sublevel.SubLevel) dev.ryanhcode.sable.Sable.HELPER
-                                .getContaining(level, pos);
-                        if (ship != null) {
-                            dev.ryanhcode.sable.companion.math.Pose3dc pose = ship.logicalPose();
-                            dev.ryanhcode.sable.companion.math.Pose3dc lastPose = ship.lastPose();
-                            double distSq = pose.position().distanceSquared(lastPose.position());
-
-                            if (distSq > 0.0225) { // Threshold: 0.15 blocks per tick (3m/s)
-                                // Smoke starts further back to not obscure the flame core
-                                net.minecraft.world.phys.Vec3 smokeLocalPos = new net.minecraft.world.phys.Vec3(
-                                        pos.getX() + 0.5 + pDir.x() * 2.5,
-                                        pos.getY() + 0.5 + pDir.y() * 2.5,
-                                        pos.getZ() + 0.5 + pDir.z() * 2.5);
-                                net.minecraft.world.phys.Vec3 smokeWorldPos = dev.ryanhcode.sable.Sable.HELPER
-                                        .projectOutOfSubLevel(level, smokeLocalPos);
-
-                                if (smokeWorldPos.y < 2000.0) {
-                                    double sSpeedX = (random.nextDouble() - 0.5) * 0.05;
-                                    double sSpeedY = (random.nextDouble() - 0.5) * 0.05;
-                                    double sSpeedZ = (random.nextDouble() - 0.5) * 0.05;
-
-                                    // We add to mc.level for world-space persistence
-                                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                                    if (mc.level != null) {
-                                        mc.level.addParticle(RocketParticles.JET_SMOKE.get(),
-                                                smokeWorldPos.x, smokeWorldPos.y, smokeWorldPos.z,
-                                                sSpeedX, sSpeedY, sSpeedZ);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Small blue flame details after warmup
-                    if (blockEntity.ignitionTicks >= blockEntity.getWarmupTime() && random.nextFloat() < 0.3f) {
-                        double bSpeedX = speedX * 1.3;
-                        double bSpeedY = speedY * 1.3;
-                        double bSpeedZ = speedZ * 1.3;
-                        level.addParticle(RocketParticles.BLUE_FLAME.get(), rx, ry, rz, bSpeedX, bSpeedY, bSpeedZ);
-                    }
-                }
-
-                // Secondary effects: ground smoke (dust) and camera shake
-                if (active) {
-                    if (hitBlock && random.nextFloat() < (visualPower / 100.0f)) {
-                        for (int i = 0; i < (1 + visualPower / 40); i++) {
-                            net.minecraft.world.phys.Vec3 normal = new net.minecraft.world.phys.Vec3(
-                                    hit.getDirection().getStepX(), hit.getDirection().getStepY(),
-                                    hit.getDirection().getStepZ());
-                            net.minecraft.world.phys.Vec3 randomDir = new net.minecraft.world.phys.Vec3(
-                                    random.nextDouble() - 0.5, random.nextDouble() - 0.5, random.nextDouble() - 0.5)
-                                    .normalize();
-                            net.minecraft.world.phys.Vec3 spreadDir = randomDir
-                                    .subtract(normal.scale(randomDir.dot(normal))).normalize();
-                            double speed = 0.5 + random.nextDouble() * 1.5;
-                            level.addParticle(RocketParticles.JET_SMOKE.get(), hitPos.x, hitPos.y, hitPos.z,
-                                    spreadDir.x * speed, spreadDir.y * speed, spreadDir.z * speed);
-                        }
-                    }
-
-                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                    if (mc.player != null) {
-                        double distSq = mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-                        double radius = RocketConfig.CLIENT.shakeRadius.get();
-                        if (distSq < (radius * radius)) {
-                            float distanceFactor = 1.0f - (float) (Math.sqrt(distSq) / radius);
-                            float powerFactor = blockEntity.fuelThrottle;
-                            dev.devce.rocketnautics.client.CameraShakeHandler.addShake(distanceFactor * powerFactor
-                                    * RocketConfig.CLIENT.shakeIntensity.get().floatValue());
-                        }
-                    }
-                }
-            }
-        }
-
-        // Handle ignition and warmup timing
-        if (active) {
-            if (blockEntity.ignitionTicks < 100)
-                blockEntity.ignitionTicks++;
-        } else {
-            if (blockEntity.ignitionTicks > 0)
-                blockEntity.ignitionTicks--;
-        }
-
-        // Apply world damage: pushing entities and melting blocks
-        if (active) {
-            Direction nozzle = blockEntity.getThrustDirection();
-            int power = blockEntity.getCurrentPower();
-            int visualPower = (int) (power * 2.85f);
-            double reach = 1.0 + (visualPower / 5.0);
-            Vec3 start = Vec3.atCenterOf(pos).add(nozzle.getStepX() * 0.5, nozzle.getStepY() * 0.5,
-                    nozzle.getStepZ() * 0.5);
-            Vec3 end = start.add(nozzle.getStepX() * reach, nozzle.getStepY() * reach, nozzle.getStepZ() * reach);
-            AABB damageArea = new AABB(start, end).inflate(0.5);
-
-            List<LivingEntity> affectedEntities = level.getEntitiesOfClass(LivingEntity.class, damageArea);
-            affectedEntities.forEach(entity -> {
-                if (entity.isAlive()) {
-                    double pushStrength = (visualPower / 150.0);
-                    entity.push(nozzle.getStepX() * pushStrength, nozzle.getStepY() * pushStrength,
-                            nozzle.getStepZ() * pushStrength);
-                    if (!level.isClientSide) {
-                        entity.hurtMarked = true;
-                    }
-                }
-            });
-
-            if (!level.isClientSide && level.getGameTime() % 10 == 0) {
-                // Melt blocks in the exhaust path
-                for (int dist = 1; dist <= 3; dist++) {
-                    BlockPos targetPos = pos.relative(nozzle, dist);
-                    BlockState targetState = level.getBlockState(targetPos);
-
-                    if (targetState.isAir())
-                        continue;
-
-                    float hardness = targetState.getDestroySpeed(level, targetPos);
-                    if (hardness < 0 || hardness > 10.0f)
-                        break;
-
-                    if (level.random.nextInt(100) < (visualPower * 2)) {
-                        if (targetState.is(Blocks.LAVA))
-                            break;
-
-                        if (targetState.is(Blocks.MAGMA_BLOCK)) {
-                            level.setBlock(targetPos, Blocks.LAVA.defaultBlockState(), 3);
-                        } else if (!targetState.is(Blocks.AIR)) {
-                            level.setBlock(targetPos, Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
-                        }
-                    }
-
-                    if (targetState.isCollisionShapeFullBlock(level, targetPos))
-                        break;
-                }
-
-                // Burn entities in the plume
-                affectedEntities.forEach(entity -> {
-                    if (entity.isAlive()) {
-                        float damage = (float) (visualPower / 10.0);
-                        entity.hurt(level.damageSources().lava(), damage);
-                        entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 40);
-                    }
-                });
-            }
-        }
-    }
-
-    /**
-     * Physics tick called by Sable to apply thrust forces.
-     * Thrust is applied as an impulse at the block's world position.
-     */
     @Override
-    public void sable$physicsTick(ServerSubLevel serverSubLevel, RigidBodyHandle handle, double deltaTime) {
-        if (!isActive())
-            return;
-
-        Direction facing = getThrustDirection();
-        Direction pushDirection = facing.getOpposite(); // Thrust pushes in opposite direction of nozzle
-        double currentThrust = getCurrentPower() * 50.0;
-
-        // Base thrust vector
-        Vector3d thrustVector = new Vector3d(
-                pushDirection.getStepX(),
-                pushDirection.getStepY(),
-                pushDirection.getStepZ());
-
-        // Apply gimbal offset (rotate base vector)
-        // For simplicity, we just add the offset and re-normalize if needed,
-        // but better to treat offset as rotation or additive vector.
-        // Let's treat it as a small deviation vector.
-        thrustVector.add(gimbalOffset);
-        if (thrustVector.length() > 0.001) {
-            thrustVector.normalize().mul(currentThrust);
-        }
-
-        Vector3d blockCenter = new Vector3d(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5,
-                worldPosition.getZ() + 0.5);
-        handle.applyImpulseAtPoint(blockCenter, thrustVector.mul(deltaTime));
-    }
-
-    public void setGimbal(double x, double y, double z) {
-        this.gimbalOffset.set(x, y, z);
-        // Limit gimbal range (e.g., max 20 degrees deviation)
-        if (this.gimbalOffset.length() > 0.35) { // ~20 degrees
-            this.gimbalOffset.normalize().mul(0.35);
-        }
-        setChanged();
-        sendData();
-    }
-
-    @Override
-    public void remove() {
-        super.remove();
-        if (level != null && level.isClientSide) {
-            ClientLogic.stopSound(this);
-        }
-    }
-
-    private Object soundInstance;
-
-    private void updateSound() {
-        if (level.isClientSide) {
-            ClientLogic.updateSound(this);
-        }
-    }
-
-    private static class ClientLogic {
-        private static void updateSound(RocketThrusterBlockEntity be) {
-            if (!be.isActive()) {
-                stopSound(be);
-                return;
-            }
-
-            if (be.soundInstance == null) {
-                startSound(be);
-            }
-        }
-
-        private static void startSound(RocketThrusterBlockEntity be) {
-            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-            ThrusterSoundInstance instance = new ThrusterSoundInstance(be);
-            mc.getSoundManager().play(instance);
-            be.soundInstance = instance;
-        }
-
-        private static void stopSound(RocketThrusterBlockEntity be) {
-            if (be.soundInstance instanceof ThrusterSoundInstance instance) {
-                instance.stopSound();
-                be.soundInstance = null;
-            }
-        }
-    }
-
     public boolean isActive() {
         return currentlyBurning;
     }
@@ -474,25 +145,10 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
 
         updateFuelProperties();
 
-        // --- Fuel Consumption Fix ---
-        // Only consume if targetActive is true.
-        // Consumption is proportional to current throttle AND targetThrottle, with a
-        // 10% floor for ignition.
         int baseConsumption = (int) (getMaxFuelConsumption() * currentEfficiencyMultiplier);
         int targetConsumption = targetActive ? (int) (baseConsumption * Math.max(0.1f, fuelThrottle * targetThrottle))
                 : 0;
         int actuallyDrained = attemptFuelDrain(targetConsumption);
-
-        /*
-        if (dev.devce.rocketnautics.RocketConfig.SERVER.enableEngineDebugLogging.get()
-                && level.getGameTime() % 20 == 0) {
-            String fluidName = fuelTank.getFluid().isEmpty() ? "Empty"
-                    : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fuelTank.getFluid().getFluid())
-                            .toString();
-            dev.devce.rocketnautics.RocketNautics.LOGGER.info("Engine at {}: Fluid={}, Amount={}mB, Drained={}mB, Valid={}",
-                worldPosition, fluidName, fuelTank.getFluidAmount(), actuallyDrained, isRocketFuel(fuelTank.getFluid()));
-        }
-        */
 
         float targetFlow = actuallyDrained / (float) Math.max(1, targetConsumption);
 
@@ -504,11 +160,9 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
                 this.internalFlow = net.minecraft.util.Mth.lerp(0.2f, this.internalFlow,
                         Math.min(targetFlow, steamCap));
             } else {
-
                 this.internalFlow = net.minecraft.util.Mth.lerp(0.5f, this.internalFlow, targetFlow);
             }
         } else {
-
             this.internalFlow = net.minecraft.util.Mth.lerp(0.05f, this.internalFlow, 0.00f);
             if (this.internalFlow < 0.001f) {
                 this.internalFlow = 0;
@@ -603,19 +257,49 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
         return 0;
     }
 
-    private java.util.UUID uniqueId = java.util.UUID.randomUUID();
+    public Vector3d getParticleDirection() {
+        Direction nozzle = getThrustDirection();
+        return new Vector3d(nozzle.getStepX(), nozzle.getStepY(), nozzle.getStepZ());
+    }
 
-    public java.util.UUID getUniqueId() {
-        return uniqueId;
+    /**
+     * Main ticking logic for the thruster.
+     * Handles particle spawning, camera shake, entity damage, and block melting.
+     */
+    @Override
+    public void tick() {
+        super.tick();
+        if (level == null) return;
+
+        // Runtime limit update for "Break Barrier" command
+        int targetMax = RocketConfig.SERVER.brokenBarrier.get() ? 100 : 20;
+        if (maxThrust.getValue() > targetMax || (targetMax == 100 && maxThrust.getValue() <= 20 && level.getGameTime() % 20 == 0)) {
+            maxThrust.between(0, targetMax);
+        }
+        if (!level.isClientSide) {
+            updateActiveState();
+        }
+
+        Direction facing = getThrustDirection();
+        thrust.withOffset(new Vec3(0.5, 0.5, 0.5).add(facing.getStepX() * 0.5, facing.getStepY() * 0.5, facing.getStepZ() * 0.5));
+        thrust.update(
+                getCurrentPower() * 50.0f,
+                fuelThrottle,
+                new Vec3(facing.getStepX(), facing.getStepY(), facing.getStepZ()),
+                isActive()
+        );
+    }
+
+    @Override
+    public void sable$physicsTick(ServerSubLevel serverSubLevel, RigidBodyHandle handle, double deltaTime) {
+        thrust.applyPhysicsForce(handle, deltaTime);
     }
 
     @Override
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
-        tag.putUUID("UniqueId", uniqueId);
         tag.putBoolean("Burning", currentlyBurning);
         tag.putBoolean("TargetActive", targetActive);
-        tag.putInt("IgnitionTicks", ignitionTicks);
         tag.putFloat("FuelThrottle", fuelThrottle);
         tag.putInt("FuelUsage", currentFuelUsage);
         tag.putBoolean("SteamMode", steamMode);
@@ -635,12 +319,8 @@ public class RocketThrusterBlockEntity extends SmartBlockEntity implements Block
     @Override
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
-        if (tag.hasUUID("UniqueId")) {
-            uniqueId = tag.getUUID("UniqueId");
-        }
         currentlyBurning = tag.getBoolean("Burning");
         targetActive = tag.getBoolean("TargetActive");
-        ignitionTicks = tag.getInt("IgnitionTicks");
         fuelThrottle = tag.getFloat("FuelThrottle");
         currentFuelUsage = tag.getInt("FuelUsage");
         steamMode = tag.getBoolean("SteamMode");

@@ -3,13 +3,13 @@
   "category": "misc",
   "key": {
     "A": {
-      "tag": "c:plates/iron"
+      "tag": "c:ingots/zinc"
     },
     "B": {
       "tag": "c:dusts/redstone"
     },
     "C": {
-      "tag": "c:ingots/zinc"
+      "tag": "c:plates/iron"
     }
   },
   "pattern": [

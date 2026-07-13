@@ -323,8 +323,39 @@ public class WCodeArea extends WElement {
             case org.lwjgl.glfw.GLFW.GLFW_KEY_TAB -> {
                 if (hasSelection()) deleteSelection();
                 String cur = lines.get(cursorY);
-                lines.set(cursorY, cur.substring(0, cursorX) + "  " + cur.substring(cursorX));
-                cursorX += 2;
+                String beforeCursor = cur.substring(0, cursorX);
+                
+                // Autocomplete logic
+                int lastSpace = Math.max(beforeCursor.lastIndexOf(' '), beforeCursor.lastIndexOf('\t'));
+                for (int i = beforeCursor.length() - 1; i >= 0; i--) {
+                    if (!Character.isLetterOrDigit(beforeCursor.charAt(i)) && beforeCursor.charAt(i) != '_') {
+                        lastSpace = i;
+                        break;
+                    }
+                }
+                
+                String word = beforeCursor.substring(lastSpace + 1);
+                String completion = null;
+                if (!word.isEmpty()) {
+                    for (String kw : KEYWORDS) {
+                        if (kw.startsWith(word) && !kw.equals(word)) { completion = kw; break; }
+                    }
+                    if (completion == null) {
+                        for (String api : API_FUNCS) {
+                            if (api.startsWith(word) && !api.equals(word)) { completion = api; break; }
+                        }
+                    }
+                }
+                
+                if (completion != null) {
+                    String afterCursor = cur.substring(cursorX);
+                    String newBefore = cur.substring(0, lastSpace + 1) + completion;
+                    lines.set(cursorY, newBefore + afterCursor);
+                    cursorX = newBefore.length();
+                } else {
+                    lines.set(cursorY, cur.substring(0, cursorX) + "  " + cur.substring(cursorX));
+                    cursorX += 2;
+                }
             }
             case org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE -> {
                 if (hasSelection()) { deleteSelection(); return true; }
