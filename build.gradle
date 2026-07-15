@@ -56,7 +56,23 @@ repositories {
     }
 }
 
-version = project.mod_version
+def getCalVer() {
+    try {
+        def process = new ProcessBuilder('git', 'rev-list', '--count', 'HEAD')
+            .directory(projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.waitFor()
+        def commitCount = process.inputStream.text.trim()
+        def dateStr = new java.text.SimpleDateFormat("yy.MM").format(new java.util.Date())
+        return "${dateStr}.${commitCount}"
+    } catch (Exception e) {
+        println "CalVer Exception: " + e
+        return project.hasProperty('mod_version') ? project.mod_version : "26.07.0"
+    }
+}
+
+version = getCalVer()
 group = 'dev.devce.rocketnautics'
 
 base {
