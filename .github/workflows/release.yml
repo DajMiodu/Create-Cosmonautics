@@ -39,13 +39,13 @@ jobs:
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
 
-      # - name: Publish update to Modrinth
-      #   id: publish_modrinth
-      #   uses: Kir-Antipov/mc-publish@v3.3
-      #   with:
-      #     modrinth-id: "micg1iTH"
-      #     modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-      #     version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
+      - name: Publish update to Modrinth
+        id: publish_modrinth
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: "micg1iTH"
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
 
       - name: Send Discord Notification
         if: success()
