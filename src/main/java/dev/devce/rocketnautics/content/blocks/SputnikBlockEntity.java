@@ -28,9 +28,9 @@ import java.util.StringJoiner;
  */
 public class SputnikBlockEntity extends BlockEntity {
     public final WGraph graph = new WGraph();
-    private final java.util.Map<String, Double> displayBridge = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, String> displayBridge = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public java.util.Map<String, Double> getDisplayBridge() {
+    public java.util.Map<String, String> getDisplayBridge() {
         return displayBridge;
     }
 

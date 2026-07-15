@@ -331,13 +331,13 @@ public class WNodeScreen extends Screen {
             int inPin = node.getPinAt(nx - node.getX(), ny - node.getY(), true);
             if (inPin != -1) {
                 WPin pin = node.getInputs().get(inPin);
-                graphics.renderTooltip(font, Component.literal("Value: " + String.format("%.2f", pin.getValue())), mouseX, mouseY);
+                graphics.renderTooltip(font, Component.literal(pin.getValueType().name() + ": " + pin.getValueAsString()), mouseX, mouseY);
                 return;
             }
             int outPin = node.getPinAt(nx - node.getX(), ny - node.getY(), false);
             if (outPin != -1) {
                 WPin pin = node.getOutputs().get(outPin);
-                graphics.renderTooltip(font, Component.literal("Value: " + String.format("%.2f", pin.getValue())), mouseX, mouseY);
+                graphics.renderTooltip(font, Component.literal(pin.getValueType().name() + ": " + pin.getValueAsString()), mouseX, mouseY);
                 return;
             }
             
@@ -1014,9 +1014,13 @@ public class WNodeScreen extends Screen {
             for (WNode node : graph.getNodes()) {
                 int inPin = node.getPinAt(nx - node.getX(), ny - node.getY(), true);
                 if (inPin != -1) {
-                    pushUndo();
-                    graph.connect(linkingNode.getId(), linkingPin, node.getId(), inPin);
-                    if (onSave != null) onSave.accept(graph.save());
+                    WPin output = linkingNode.getOutputs().get(linkingPin);
+                    WPin input = node.getInputs().get(inPin);
+                    if (input.getValueType().accepts(output.getValueType())) {
+                        pushUndo();
+                        graph.connect(linkingNode.getId(), linkingPin, node.getId(), inPin);
+                        if (onSave != null) onSave.accept(graph.save());
+                    }
                     break;
                 }
             }

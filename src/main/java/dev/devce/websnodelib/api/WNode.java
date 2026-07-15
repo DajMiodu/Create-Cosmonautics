@@ -100,7 +100,11 @@ public class WNode {
      * @param color Display color of the pin.
      */
     public void addInput(String name, int color) {
-        WPin pin = new WPin(name, WPin.Type.INPUT, color);
+        addInput(name, color, WPin.ValueType.NUMBER);
+    }
+
+    public void addInput(String name, int color, WPin.ValueType valueType) {
+        WPin pin = new WPin(name, WPin.Type.INPUT, color, valueType);
         this.inputs.add(pin);
         updateLayout();
     }
@@ -111,7 +115,11 @@ public class WNode {
      * @param color Display color of the pin.
      */
     public void addOutput(String name, int color) {
-        WPin pin = new WPin(name, WPin.Type.OUTPUT, color);
+        addOutput(name, color, WPin.ValueType.NUMBER);
+    }
+
+    public void addOutput(String name, int color, WPin.ValueType valueType) {
+        WPin pin = new WPin(name, WPin.Type.OUTPUT, color, valueType);
         this.outputs.add(pin);
         updateLayout();
     }
@@ -383,7 +391,7 @@ public class WNode {
         if (inputsTag.size() > 0 && inputs.isEmpty()) {
             for (int i = 0; i < inputsTag.size(); i++) {
                 net.minecraft.nbt.CompoundTag pinTag = inputsTag.getCompound(i);
-                addInput(pinTag.getString("name"), pinTag.getInt("color"));
+                addInput(pinTag.getString("name"), pinTag.getInt("color"), WPin.ValueType.byName(pinTag.getString("valueType")));
                 inputs.get(i).load(pinTag);
             }
         } else {
@@ -394,7 +402,7 @@ public class WNode {
         if (outputsTag.size() > 0 && outputs.isEmpty()) {
             for (int i = 0; i < outputsTag.size(); i++) {
                 net.minecraft.nbt.CompoundTag pinTag = outputsTag.getCompound(i);
-                addOutput(pinTag.getString("name"), pinTag.getInt("color"));
+                addOutput(pinTag.getString("name"), pinTag.getInt("color"), WPin.ValueType.byName(pinTag.getString("valueType")));
                 outputs.get(i).load(pinTag);
             }
         } else {

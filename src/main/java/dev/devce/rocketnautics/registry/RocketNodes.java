@@ -30,7 +30,7 @@ public class RocketNodes {
         // --- Input Port (for nested functions) ---
         NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "input"), "Functions", (x, y) -> {
             WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "input"), "Input Port", x, y);
-            node.addOutput("Out", 0xFFFFFFFF);
+            node.addOutput("Out", 0xFFFFFFFF, WPin.ValueType.ANY);
             dev.devce.websnodelib.api.elements.WTextField nameField = new dev.devce.websnodelib.api.elements.WTextField(60);
             nameField.setValue("in_1");
             node.addElement(nameField);
@@ -40,7 +40,7 @@ public class RocketNodes {
         // --- Output Port (for nested functions) ---
         NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "output"), "Functions", (x, y) -> {
             WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "output"), "Output Port", x, y);
-            node.addInput("In", 0xFFFFFFFF);
+            node.addInput("In", 0xFFFFFFFF, WPin.ValueType.ANY);
             dev.devce.websnodelib.api.elements.WTextField nameField = new dev.devce.websnodelib.api.elements.WTextField(60);
             nameField.setValue("out_1");
             node.addElement(nameField);
@@ -63,8 +63,7 @@ public class RocketNodes {
                 for (WNode inNode : internalNodes) {
                     if (inNode.getTypeId().getPath().equals("input")) {
                         if (inIdx < n.getInputs().size()) {
-                            double val = n.getInputs().get(inIdx).getValue();
-                            inNode.getOutputs().get(0).setValue(val);
+                            inNode.getOutputs().get(0).copyValueFrom(n.getInputs().get(inIdx));
                         }
                         inIdx++;
                     }
@@ -76,8 +75,7 @@ public class RocketNodes {
                 for (WNode outNode : internalNodes) {
                     if (outNode.getTypeId().getPath().equals("output")) {
                         if (outIdx < n.getOutputs().size()) {
-                            double val = outNode.getInputs().get(0).getValue();
-                            n.getOutputs().get(outIdx).setValue(val);
+                            n.getOutputs().get(outIdx).copyValueFrom(outNode.getInputs().get(0));
                         }
                         outIdx++;
                     }
@@ -105,8 +103,8 @@ public class RocketNodes {
         NodeRegistry.register(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "display"), "Display", (x, y) -> {
             WNode node = new WNode(ResourceLocation.fromNamespaceAndPath(RocketNautics.MODID, "display"), "Display", x, y);
             node.getCustomData().putString("code", "-- Display input value\nlocal val = input(\"In\")\noutput(\"Out\", val)");
-            node.addInput("In", 0xFFFFFFFF);
-            node.addOutput("Out", 0xFF00FF88);
+            node.addInput("In", 0xFFFFFFFF, WPin.ValueType.ANY);
+            node.addOutput("Out", 0xFF00FF88, WPin.ValueType.ANY);
             
             dev.devce.websnodelib.api.elements.WLabel label = new dev.devce.websnodelib.api.elements.WLabel("0.00", 0xFF00FF00);
             node.addElement(label);
@@ -116,8 +114,7 @@ public class RocketNodes {
             WNode.Evaluator parentEvaluator = node.getEvaluator();
             node.setEvaluator(n -> {
                 parentEvaluator.evaluate(n);
-                double val = n.getInputs().get(0).getValue();
-                label.setText(String.format("%.2f", val));
+                label.setText(n.getInputs().get(0).getValueAsString());
             });
             
             return node;
@@ -201,7 +198,7 @@ public class RocketNodes {
                 // Parse pins to stay in sync
                 n.clearInputs();
                 n.clearOutputs();
-                Pattern pinPat = Pattern.compile("(input|output)\\(\\s*[\"']([^\"']+)[\"']");
+                Pattern pinPat = Pattern.compile("(input|output)\\(\\s*[\"']([^\"']+)[\"']\\s*(?:,\\s*[\"']([^\"']+)[\"'])?");
                 for (String line : code.split("\n")) {
                     String codeOnly = line;
                     int idx = line.indexOf("--");
@@ -209,8 +206,9 @@ public class RocketNodes {
                     Matcher m = pinPat.matcher(codeOnly);
                     while (m.find()) {
                         String kind = m.group(1), name = m.group(2);
-                        if (kind.equals("input")) n.addInput(name, 0xFFFFFFFF);
-                        if (kind.equals("output")) n.addOutput(name, 0xFF00FF88);
+                        WPin.ValueType valueType = parseLuaPinType(m.group(3));
+                        if (kind.equals("input")) n.addInput(name, colorForPinType(valueType), valueType);
+                        if (kind.equals("output")) n.addOutput(name, colorForPinType(valueType), valueType);
                     }
                 }
 
@@ -245,7 +243,7 @@ public class RocketNodes {
                     String name = arg.tojstring();
                     for (int i = 0; i < n.getInputs().size(); i++)
                         if (n.getInputs().get(i).getName().equals(name))
-                            return LuaValue.valueOf(n.getInputs().get(i).getValue());
+                            return luaValueForPin(n.getInputs().get(i));
                     return LuaValue.ZERO;
                 }
             });
@@ -254,10 +252,9 @@ public class RocketNodes {
             globals[0].set("output", new TwoArgFunction() {
                 @Override public LuaValue call(LuaValue arg1, LuaValue arg2) {
                     String name  = arg1.tojstring();
-                    double value = arg2.todouble();
                     for (int i = 0; i < n.getOutputs().size(); i++)
                         if (n.getOutputs().get(i).getName().equals(name)) {
-                            n.getOutputs().get(i).setValue(value);
+                            setPinFromLua(n.getOutputs().get(i), arg2);
                             return LuaValue.NIL;
                         }
                     return LuaValue.NIL;
@@ -485,8 +482,7 @@ public class RocketNodes {
                 @Override public LuaValue call(LuaValue arg1, LuaValue arg2) {
                     if (finalSputnik != null) {
                         String name = arg1.tojstring();
-                        double val = arg2.todouble();
-                        finalSputnik.getDisplayBridge().put(name, val);
+                        finalSputnik.getDisplayBridge().put(name, arg2.isnil() ? "" : arg2.tojstring());
                     }
                     return LuaValue.NIL;
                 }
@@ -675,15 +671,49 @@ public class RocketNodes {
             for (WNode in : inputs) {
                 String name = "in";
                 try { name = ((dev.devce.websnodelib.api.elements.WTextField)in.getElements().get(0)).getValue(); } catch(Exception e){}
-                node.addInput(name, 0xFFFFFFFF);
+                node.addInput(name, 0xFFFFFFFF, WPin.ValueType.ANY);
             }
 
             node.clearOutputs();
             for (WNode out : outputs) {
                 String name = "out";
                 try { name = ((dev.devce.websnodelib.api.elements.WTextField)out.getElements().get(0)).getValue(); } catch(Exception e){}
-                node.addOutput(name, 0xFFFFFFFF);
+                node.addOutput(name, 0xFFFFFFFF, WPin.ValueType.ANY);
             }
+        }
+    }
+
+    private static WPin.ValueType parseLuaPinType(String rawType) {
+        if (rawType == null || rawType.isBlank()) return WPin.ValueType.NUMBER;
+        return switch (rawType.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "string", "str", "text" -> WPin.ValueType.STRING;
+            case "any" -> WPin.ValueType.ANY;
+            default -> WPin.ValueType.NUMBER;
+        };
+    }
+
+    private static int colorForPinType(WPin.ValueType valueType) {
+        return switch (valueType) {
+            case STRING -> 0xFFFFCC33;
+            case ANY -> 0xFFFFFFFF;
+            case NUMBER -> 0xFF00FF88;
+        };
+    }
+
+    private static LuaValue luaValueForPin(WPin pin) {
+        return pin.getValueType() == WPin.ValueType.STRING
+            ? LuaValue.valueOf(pin.getStringValue())
+            : LuaValue.valueOf(pin.getValue());
+    }
+
+    private static void setPinFromLua(WPin pin, LuaValue value) {
+        if (pin.getValueType() == WPin.ValueType.STRING) {
+            pin.setStringValue(value.isnil() ? "" : value.tojstring());
+        } else if (pin.getValueType() == WPin.ValueType.ANY && value.isstring() && !value.isnumber()) {
+            pin.setStringValue(value.tojstring());
+        } else {
+            pin.setValue(value.todouble());
+            pin.setStringValue(value.tojstring());
         }
     }
 }
